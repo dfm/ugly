@@ -19,7 +19,7 @@ def load_config(fn):
     # Set defaults.
     config["basepath"] = os.path.expanduser(config.get("basepath",
                                             os.path.join("~", ".ugly")))
-    config["feedlist"] = os.path.expanduser(
-        config.get("feedlist", os.path.join(config["basepath"], "feeds.json")))
+    config["db"] = os.path.expanduser(
+        config.get("db", os.path.join(config["basepath"], "ugly.db")))
 
     return config

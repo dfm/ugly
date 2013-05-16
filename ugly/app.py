@@ -1,25 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-__all__ = ["add", "remove", "update"]
+__all__ = ["init", "add", "remove", "update", "status"]
 
+import sqlite3
 from . import feed
+
+
+def init(args, config):
+    feed.init_tables(config["db"])
+    return 0
 
 
 def add(args, config):
     try:
-        feed.add_feed(args.name, args.url, config["feedlist"])
-    except Exception as e:
-        print(e)
+        feed.add_feed(args.name, args.url, config["db"])
+    except sqlite3.IntegrityError:
+        print("Feed already exists: '{0}'".format(args.name))
         return -1
     return 0
 
 
 def remove(args, config):
     try:
-        feed.remove_feed(args.name, config["feedlist"])
+        feed.remove_feed(args.name, config["db"])
     except Exception as e:
-        print(e)
+        print(repr(e))
         return -1
     return 0
 

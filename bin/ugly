@@ -15,6 +15,10 @@ import argparse
 
 subparsers = {}
 
+# INIT.
+p = subparsers["init"] = argparse.ArgumentParser(
+    description="Set up the tables, etc.")
+
 # ADD.
 p = subparsers["add"] = argparse.ArgumentParser(description="Add a feed")
 p.add_argument("name", help="a short, memorable and unique name for the feed")

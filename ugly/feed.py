@@ -6,7 +6,7 @@ __all__ = ["add_feed", "update_all"]
 import re
 import os
 import json
-import hashlib
+import sqlite3
 import logging
 import feedparser
 
@@ -25,18 +25,35 @@ def load(fn):
     return feeds
 
 
-def add_feed(name, url, fn):
-    feeds = load(fn)
-    assert name not in feeds, "Feed already exists: {0}".format(name)
-    feeds[name] = {"url": url, "name": name}
-    save(feeds, fn)
+def init_tables(dbfn):
+    with sqlite3.connect(dbfn) as c:
+        cursor = c.cursor()
+
+        # Add the table to list the feeds.
+        cursor.execute("""create table if not exists feeds
+        (id integer primary key, name text unique, url text, title text,
+         link text, modified text, etag text)
+        """)
+
+        # Add the table to contain the actual posts.
+        cursor.execute("""create virtual table if not exists posts using fts3
+        (id integer primary key, title text, link text, published text,
+         updated text, feedid integer,
+         foreign ket(feedid) references feeds(id))
+        """)
 
 
-def remove_feed(name, fn):
-    feeds = load(fn)
-    assert name in feeds, "Unrecognized feed: {0}".format(name)
-    feeds.pop(name)
-    save(feeds, fn)
+def add_feed(name, url, dbfn):
+    with sqlite3.connect(dbfn) as c:
+        cursor = c.cursor()
+        cursor.execute("insert into feeds (name, url) values(?, ?)",
+                       (name, url))
+
+
+def remove_feed(name, dbfn):
+    with sqlite3.connect(dbfn) as c:
+        cursor = c.cursor()
+        cursor.execute("delete from feeds where name=?", (name, ))
 
 
 def update_feed(url, etag=None, modified=None):
