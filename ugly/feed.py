@@ -18,15 +18,15 @@ def init_tables(dbfn):
 
         # Add the table to list the feeds.
         cursor.execute("""create table if not exists feeds
-        (id integer primary key, name text unique, url text, title text,
-         link text, modified text, etag text)
+        (name text, url text, title text, link text,
+         modified text, etag text)
         """)
 
         # Add the table to contain the actual posts.
         cursor.execute("""create virtual table if not exists posts using fts3
-        (id integer primary key, read integer, title text, summary text,
-         link text unique, published text, updated text, feedid integer,
-         foreign ket(feedid) references feeds(id))
+        (read integer, title text, summary text,
+         link text, published text, updated text, feedid integer,
+         foreign key(feedid) references feeds(rowid))
         """)
 
 
@@ -61,7 +61,7 @@ def _parse_date(dt):
 def update_all(dbfn):
     with sqlite3.connect(dbfn) as c:
         cursor = c.cursor()
-        cursor.execute("select id,name,url,modified,etag from feeds")
+        cursor.execute("select rowid,name,url,modified,etag from feeds")
         for feed in cursor.fetchall():
             fid, name, url, modified, etag = feed
             tree = update_feed(url, etag, modified)
@@ -72,15 +72,18 @@ def update_all(dbfn):
             # Update the meta-data.
             fg = tree.feed.get
             cursor.execute("""update feeds set
-                title=?,link=?,etag=?,modified=? where id=?
+                title=?,link=?,etag=?,modified=? where rowid=?
             """, (fg("title"), fg("link"), tree.get("etag"),
                   tree.get("modified"), fid))
 
             for e in tree.entries:
+                link = e.get("link")
                 cursor.execute("""insert or replace into posts
-                    (feedid,read,title,summary,link,published,updated) values
-                    (?,?,?,?,?,?,?)
-                """, (fid, 0, e.get("title"), e.get("summary"), e.get("link"),
+                    (rowid,feedid,read,title,summary,link,published,updated)
+                values
+                    ((select rowid FROM posts WHERE link=?),
+                     ?,?,?,?,?,?,?)
+                """, (link, name, 0, e.get("title"), e.get("summary"), link,
                       _parse_date(e.get("published_parsed")),
                       _parse_date(e.get("updated_parsed"))))
 
@@ -90,7 +93,7 @@ def get_status(dbfn):
         cursor = c.cursor()
         cursor.execute("""
         select feeds.title,count(posts) from posts
-            join feeds on feeds.id=posts.feedid
+            join feeds on feeds.name=posts.feedid
             where posts.read=0
             group by posts.feedid
         """)
