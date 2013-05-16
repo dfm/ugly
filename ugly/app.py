@@ -31,16 +31,15 @@ def remove(args, config):
 
 
 def update(args, config):
-    feed.update_all(config["feedlist"], config["basepath"])
+    feed.update_all(config["db"])
     return 0
 
 
 def status(args, config):
-    counts = feed.get_status(config["feedlist"], config["basepath"])
-    for el in counts:
-        count = el["count"]
+    counts = feed.get_status(config["db"])
+    for name, count in counts.items():
         if count > 0:
-            print("{0}: {1} unread".format(el["title"], count))
+            print("{0}: {1} unread".format(name, count))
     return 0
 
 

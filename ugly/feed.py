@@ -3,26 +3,13 @@
 
 __all__ = ["add_feed", "update_all"]
 
-import re
 import os
 import json
 import sqlite3
 import logging
 import feedparser
-
-
-def save(feeds, fn):
-    with open(fn, "w") as f:
-        feeds = json.dump(feeds, f, indent=2)
-
-
-def load(fn):
-    try:
-        with open(fn) as f:
-            feeds = json.load(f)
-    except FileNotFoundError:
-        feeds = {}
-    return feeds
+from time import mktime
+from datetime import datetime
 
 
 def init_tables(dbfn):
@@ -37,8 +24,8 @@ def init_tables(dbfn):
 
         # Add the table to contain the actual posts.
         cursor.execute("""create virtual table if not exists posts using fts3
-        (id integer primary key, title text, link text, published text,
-         updated text, feedid integer,
+        (id integer primary key, read integer, title text, summary text,
+         link text unique, published text, updated text, feedid integer,
          foreign ket(feedid) references feeds(id))
         """)
 
@@ -64,70 +51,47 @@ def update_feed(url, etag=None, modified=None):
     return tree
 
 
-def update_all(fn, basedir):
-    feeds = load(fn)
-
-    count = {}
-    for nm, f in feeds.items():
-        # Check for updated feed.
-        feed = update_feed(f["url"], f.get("etag"), f.get("modified"))
-
-        # The feed was unchanged.
-        if feed is None:
-            continue
-
-        # Update the count of new entries.
-        count[nm] = len(feed.entries)
-
-        # Update the meta-data.
-        fg = feed.feed.get
-        f["title"] = fg("title")
-        f["link"] = fg("link")
-        f["description"] = fg("description") or fg("subtitle")
-        f["etag"] = feed.get("etag")
-        f["modified"] = feed.get("modified")
-
-        # Save the entries.
-        bp = os.path.join(basedir, f["name"], "new")
-        try:
-            os.makedirs(bp)
-        except os.error:
-            pass
-
-        for e in feed.entries:
-            date = e.date_parsed
-            title = e.get("title", "Untitled")
-
-            # Construct a file name for the entry.
-            lfn = ("{1:04d}-{2:02d}-{3:02d}-{4:02d}-{5:02d}-{6:02d}-{0}.json"
-                   .format(title.lower(), *date))
-            lfn = os.path.join(bp, re.sub(r"[ /]", "-", lfn))
-
-            # Parse the entry into a dictionary.
-            doc = {
-                "title": title,
-                "summary": e.get("summary"),
-                "link": e.get("link"),
-                "published": e.get("published"),
-                "updated": e.get("updated"),
-            }
-
-            # Save the JSON.
-            save(doc, lfn)
-
-    # Save the feed descriptions.
-    save(feeds, fn)
+def _parse_date(dt):
+    if dt is None:
+        return None
+    dt = datetime.fromtimestamp(mktime(dt))
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ%z")
 
 
-def get_status(fn, basepath):
-    feeds = load(fn)
-    results = []
-    for nm in feeds.keys():
-        p = os.path.join(basepath, nm, "new")
-        try:
-            count = len(os.listdir(p))
-        except:
-            count = 0
-        results.append({"title": nm,
-                        "count": count})
-    return results
+def update_all(dbfn):
+    with sqlite3.connect(dbfn) as c:
+        cursor = c.cursor()
+        cursor.execute("select id,name,url,modified,etag from feeds")
+        for feed in cursor.fetchall():
+            fid, name, url, modified, etag = feed
+            tree = update_feed(url, etag, modified)
+            if tree is None:
+                print("Feed is up to date: '{0}'".format(name))
+                continue
+
+            # Update the meta-data.
+            fg = tree.feed.get
+            cursor.execute("""update feeds set
+                title=?,link=?,etag=?,modified=? where id=?
+            """, (fg("title"), fg("link"), tree.get("etag"),
+                  tree.get("modified"), fid))
+
+            for e in tree.entries:
+                cursor.execute("""insert or replace into posts
+                    (feedid,read,title,summary,link,published,updated) values
+                    (?,?,?,?,?,?,?)
+                """, (fid, 0, e.get("title"), e.get("summary"), e.get("link"),
+                      _parse_date(e.get("published_parsed")),
+                      _parse_date(e.get("updated_parsed"))))
+
+
+def get_status(dbfn):
+    with sqlite3.connect(dbfn) as c:
+        cursor = c.cursor()
+        cursor.execute("""
+        select feeds.title,count(posts) from posts
+            join feeds on feeds.id=posts.feedid
+            where posts.read=0
+            group by posts.feedid
+        """)
+        return dict(cursor.fetchall())
