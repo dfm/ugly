@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+
+try:
+    import ugly
+except ImportError:
+    sys.path.append(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    import ugly
+
+import argparse
+
+subparsers = {}
+
+# ADD.
+p = subparsers["add"] = argparse.ArgumentParser(description="Add a feed")
+p.add_argument("name", help="a short, memorable and unique name for the feed")
+p.add_argument("url", help="the URL of the feed")
+
+# REMOVE.
+p = subparsers["remove"] = argparse.ArgumentParser(description="Remove a feed")
+p.add_argument("name", help="the name of the feed")
+
+# UPDATE.
+p = subparsers["update"] = argparse.ArgumentParser(
+    description="Update the feeds")
+
+# STATUS.
+p = subparsers["status"] = argparse.ArgumentParser(
+    description="Get the status... duh!")
+
+# READ.
+p = subparsers["read"] = argparse.ArgumentParser(
+    description="Read the next item in a feed")
+p.add_argument("name", help="the name of the feed")
+
+# Global.
+for k, p in subparsers.items():
+    p.add_argument("-f", "--config", default=os.path.join("~", ".uglyrc"),
+                   help="path to a custom settings file [~/.uglyrc]")
+
+if __name__ == "__main__":
+    if len(sys.argv) <= 1:
+        print("Fucking ugly RSS... give me a command.")
+        sys.exit(0)
+
+    cmd = sys.argv[1].lower()
+
+    if cmd not in subparsers.keys():
+        print("Unrecognized command.")
+        sys.exit(1)
+
+    parser = subparsers[cmd]
+    args = parser.parse_args(sys.argv[2:])
+
+    # Load the configuration file.
+    config = ugly.config.load_config(args.config)
+
+    # Execute the command.
+    sys.exit(getattr(ugly.app, cmd)(args, config))
