@@ -3,10 +3,9 @@
 
 __all__ = ["add_feed", "update_all"]
 
-import os
-import json
 import sqlite3
 import logging
+import html2text
 import feedparser
 from time import mktime
 from datetime import datetime
@@ -18,7 +17,7 @@ def init_tables(dbfn):
 
         # Add the table to list the feeds.
         cursor.execute("""create table if not exists feeds
-        (name text, url text, title text, link text,
+        (name text unique, url text, title text, link text,
          modified text, etag text)
         """)
 
@@ -26,14 +25,15 @@ def init_tables(dbfn):
         cursor.execute("""create virtual table if not exists posts using fts3
         (read integer, title text, summary text,
          link text, published text, updated text, feedid integer,
-         foreign key(feedid) references feeds(rowid))
+         foreign key(feedid) references feeds(rowid),
+         tokenize=porter)
         """)
 
 
 def add_feed(name, url, dbfn):
     with sqlite3.connect(dbfn) as c:
         cursor = c.cursor()
-        cursor.execute("insert into feeds (name, url) values(?, ?)",
+        cursor.execute("insert or ignore into feeds (name, url) values(?, ?)",
                        (name, url))
 
 
@@ -66,7 +66,6 @@ def update_all(dbfn):
             fid, name, url, modified, etag = feed
             tree = update_feed(url, etag, modified)
             if tree is None:
-                print("Feed is up to date: '{0}'".format(name))
                 continue
 
             # Update the meta-data.
@@ -98,3 +97,28 @@ def get_status(dbfn):
             group by posts.feedid
         """)
         return dict(cursor.fetchall())
+
+
+def read_post(feed, dbfn):
+    with sqlite3.connect(dbfn) as c:
+        cursor = c.cursor()
+        cursor.execute("""
+        select rowid,title,link,summary,updated from posts
+        where feedid=? and read=0
+        order by updated limit 1
+        """, (feed, ))
+
+        doc = cursor.fetchone()
+        if doc is None:
+            return "No unread posts.", None
+
+        rowid, title, link, summary, updated = doc
+
+        # Update as read.
+        cursor.execute("update posts set read=1 where rowid=?", (rowid, ))
+
+        # Parse and format the text.
+        title = "Post {0}: ".format(rowid) + html2text.html2text(title).strip()
+        summary = html2text.html2text(summary).strip()
+        return (title + "\n" + "=" * len(title) + "\n\n" + updated + "\n"
+                + "-" * len(updated) + "\n\n" + summary, link)

@@ -36,8 +36,8 @@ p = subparsers["update"] = argparse.ArgumentParser(
 p = subparsers["status"] = argparse.ArgumentParser(
     description="Get the status... duh!")
 
-# READ.
-p = subparsers["read"] = argparse.ArgumentParser(
+# NEXT.
+p = subparsers["next"] = argparse.ArgumentParser(
     description="Read the next item in a feed")
 p.add_argument("name", help="the name of the feed")
 
