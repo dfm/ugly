@@ -6,12 +6,14 @@ Fucking ugly RSS
 
 You're a nerd.
 
+And you need Python 3.3.
+
 Installation
 ------------
 
 ::
 
-   pip install ugly
+   pip3 install ugly
 
 Usage
 -----

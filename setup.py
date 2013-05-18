@@ -14,7 +14,7 @@ if sys.argv[-1] == "publish":
 setup(
     name="ugly",
     version="0.0.1",
-    description="Fucking ugly rss",
+    description="Fucking ugly RSS",
     long_description=open("README.rst").read(),
     author="Dan F-M",
     author_email="danfm@nyu.edu",
