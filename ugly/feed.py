@@ -122,3 +122,14 @@ def read_post(feed, dbfn):
         summary = html2text.html2text(summary).strip()
         return (title + "\n" + "=" * len(title) + "\n\n" + updated + "\n"
                 + "-" * len(updated) + "\n\n" + summary, link)
+
+
+def mark_post(marking, post_id, dbfn):
+    marking = marking.lower()
+    if marking not in ["read", "unread"]:
+        return
+    marking = 0 if marking == "unread" else 1
+    with sqlite3.connect(dbfn) as c:
+        cursor = c.cursor()
+        cursor.execute("update posts set read=? where rowid=?",
+                       (marking, post_id))

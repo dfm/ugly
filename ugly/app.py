@@ -62,3 +62,8 @@ def next(args, config):
         return subprocess.call(["open", link])
 
     return 0
+
+
+def mark(args, config):
+    feed.mark_post(args.marking, args.post, config["db"])
+    return 0
