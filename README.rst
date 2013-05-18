@@ -10,12 +10,14 @@ Installation
 ------------
 
 ::
+
    pip install ugly
 
 Usage
 -----
 
 ::
+
    ugly init
    ugly add "https://github.com/blog.atom"
    ugly status
