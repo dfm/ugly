@@ -21,7 +21,7 @@ Usage
 ::
 
    ugly init
-   ugly add "https://github.com/blog.atom"
+   ugly add github "https://github.com/blog.atom"
    ugly status
-   ugly next
+   ugly next github
    ugly mark unread 1
