@@ -1,0 +1,66 @@
+@import "normalize";
+
+body {
+    font-family: "Helvetica Neue", Helvetica, sans-serif;
+    background: #dededa;
+    color: #222226;
+}
+
+a {
+    color: #6666ee;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.container {
+    margin: 80px 20px 50px 10%;
+    min-width: 400px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 200;
+    line-height: 36px;
+}
+
+p {
+    margin: 5px 0 0;
+    font-size: 16px;
+    font-weight: 200;
+    font-style: italic;
+
+    strong {
+        font-weight: normal;
+    }
+
+    &.footer {
+        font-size: 13px;
+        color: #666;
+        width: 400px;
+    }
+}
+
+form {
+    margin: 20px 0;
+
+    input[type="text"] {
+        display: block;
+        border: 2px solid #333;
+        border-radius: 6px;
+        padding: 6px 8px 5px;
+        width: 350px;
+
+        font-family: "Helvetica Neue", Helvetica, sans-serif;
+        color: #222226;
+
+        &:focus {
+            border-color: #6666ee;
+            outline: 0;
+            outline: thin dotted \9; /* IE6-9 */
+        }
+    }
+}
