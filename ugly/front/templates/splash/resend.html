@@ -1,0 +1,10 @@
+{% extends "splash/base.html" %}
+{% block content %}
+{% if error %}
+<h1>hold up.</h1>
+<p>{{ error }}</p>
+{% else %}
+<h1>invitation sent.</h1>
+<p>Check your email.</p>
+{% endif %}
+{% endblock %}

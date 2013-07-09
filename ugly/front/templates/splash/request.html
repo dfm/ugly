@@ -1,5 +1,17 @@
 {% extends "splash/base.html" %}
 {% block content %}
+{% if error %}
+<h1>just hold on a second.</h1>
+<p>{{ error }}</p>
+{% include "splash/form.html" %}
+{% elif registered %}
+<h1>just hold on a second.</h1>
+<p>There's already an invitation registered for that email.</p>
+{% if sent %}
+<p>Should we <a href="">resend the invitation</a>?</p>
+{% endif %}
+{% else %}
 <h1>got it.</h1>
 <p>Your invitation is on its way.</p>
+{% endif %}
 {% endblock %}
