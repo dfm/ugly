@@ -1,23 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__all__ = ["front"]
+__all__ = ["splash"]
 
 import flask
-from hashlib import sha1
 
-from ..database import db
-from ..models import hash_email, Invitation
+from .database import db
+from .models import hash_email, Invitation
 
-front = flask.Blueprint("front", __name__, template_folder="templates")
+splash = flask.Blueprint("splash", __name__)
 
 
-@front.route("/")
+@splash.route("/")
 def index():
     return flask.render_template("splash/index.html")
 
 
-@front.route("/request")
+@splash.route("/request")
 def request():
     # Get the provided email address.
     email = flask.request.values.get("email", None)
@@ -35,7 +34,7 @@ def request():
 
     # Check if an invitation already exists.
     emailhash = hash_email(email)
-    existing = Invitation.query.filter_by(emailhash=emailhash).first()
+    existing = Invitation.query.filter_by(email=emailhash).first()
     if existing is not None:
         return flask.render_template("splash/request.html",
                                      registered=True, sent=existing.sent,
@@ -49,11 +48,11 @@ def request():
     return flask.render_template("splash/request.html")
 
 
-@front.route("/resend/<email>")
+@splash.route("/resend/<email>")
 def resend(email):
     # Try to find the email.
     emailhash = hash_email(email)
-    existing = Invitation.query.filter_by(emailhash=emailhash).first()
+    existing = Invitation.query.filter_by(email=emailhash).first()
     if existing is None:
         return flask.render_template("splash/resend.html",
                                      error="No invitation registered for that"
@@ -65,3 +64,14 @@ def resend(email):
                                      error="Be patient, it'll come soon.")
 
     return flask.render_template("splash/resend.html")
+
+
+@splash.route("/signup/<code>")
+def signup(code):
+    existing = Invitation.query.filter_by(code=code).first()
+    if existing is None or not existing.sent:
+        return flask.render_template("splash/signup.html",
+                                     error="The invitation code doesn't seem "
+                                           "to exist.")
+
+    return flask.render_template("splash/signup.html", code=code)

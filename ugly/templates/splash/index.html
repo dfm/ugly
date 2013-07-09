@@ -1,9 +1,11 @@
-{% extends "splash/base.html" %}
+{% extends "base.html" %}
 {% block content %}
 <h1>coming soon.</h1>
 <p>The <strong>ugliest</strong> RSS reader on the market.</p>
 <p>Sign up for an invitation… if you think you can <strong>take it</strong>.</p>
 {% include "splash/form.html" %}
+<p>You can also <a href="{{ url_for('login.index') }}">log in</a>
+if you've already been invited.</p>
 <p class="footer"><strong>Ugly Reader</strong> is an open source RSS
 reader by <a href="http://dan.iel.fm">Dan Foreman-Mackey</a>.</p>
 {% endblock %}
