@@ -1,0 +1,16 @@
+@import "normalize";
+
+body {
+    font-family: "Helvetica Neue", Helvetica, sans-serif;
+    color: #222226;
+    font-size: 16px;
+}
+
+a {
+    color: #6666ee;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}

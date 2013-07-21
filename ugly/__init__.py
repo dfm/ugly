@@ -4,8 +4,17 @@
 __all__ = ["create_app"]
 
 import flask
+from flask.ext.login import current_user
+
 from .login import oid, login_manager
 from .database import db
+
+
+def before_request():
+    if current_user is not None and not current_user.is_anonymous():
+        flask.g.user = current_user
+    else:
+        flask.g.user = None
 
 
 def create_app(config_filename=None):
@@ -21,12 +30,18 @@ def create_app(config_filename=None):
     oid.init_app(app)
     login_manager.init_app(app)
 
+    # Before request.
+    app.before_request(before_request)
+
     # Bind the blueprints.
     from .splash import splash
     app.register_blueprint(splash)
 
     from .login import login
     app.register_blueprint(login)
+
+    from .feed import feed
+    app.register_blueprint(feed)
 
     from .api import api
     app.register_blueprint(api, url_prefix="/api")

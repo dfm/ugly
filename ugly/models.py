@@ -1,28 +1,60 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__all__ = ["hash_email", "Invitation", "User"]
+__all__ = ["hash_email", "Invitation", "User", "Feed", "Article", "Reading"]
 
 import os
 import flask
+import logging
+import feedparser
+from time import mktime
 from hashlib import sha1
 from datetime import datetime
 from SimpleAES import SimpleAES
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import (Column, Integer, String, Boolean, DateTime,
+                        ForeignKey)
+from sqlalchemy.orm import relationship
 
 from .database import db
 
+# An auxiliary table for keeping track of user's subscriptions to feeds.
+subscriptions = db.Table("subscriptions",
+                         Column("user_id", Integer, ForeignKey("users.id")),
+                         Column("feed_id", Integer, ForeignKey("feeds.id")))
+
 
 def hash_email(email):
+    """
+    The default hash function for storing email addresses in the database.
+
+    :param email:
+        The email address.
+
+    """
     return sha1(email).hexdigest()
 
 
 def encrypt_email(email):
+    """
+    The default encryption function for storing emails in the database. This
+    uses AES and the encryption key defined in the applications configuration.
+
+    :param email:
+        The email address.
+
+    """
     aes = SimpleAES(flask.current_app.config["AES_KEY"])
     return aes.encrypt(email)
 
 
 def decrypt_email(enc_email):
+    """
+    The inverse of :func:`encrypt_email`.
+
+    :param enc_email:
+        The encrypted email address.
+
+    """
     aes = SimpleAES(flask.current_app.config["AES_KEY"])
     return aes.decrypt(enc_email)
 
@@ -67,6 +99,9 @@ class User(db.Model):
 
     openid = Column(String)
     name = Column(String)
+    apitoken = Column(String)
+
+    feeds = relationship("Feed", secondary=subscriptions)
 
     def __init__(self, email, openid, name):
         # Encrypt and hash the email address.
@@ -79,6 +114,9 @@ class User(db.Model):
         # Initialize the OpenID stuff.
         self.openid = openid
         self.name = name
+
+        # Generate an API token.
+        self.apitoken = self.generate_token()
 
     def __repr__(self):
         return "<User(\"{0}\")>".format(self.get_email())
@@ -97,3 +135,126 @@ class User(db.Model):
 
     def is_anonymous(self):
         return False
+
+    def generate_token(self):
+        return sha1(os.urandom(8) + self.email + os.urandom(8)).hexdigest()
+
+
+class Feed(db.Model):
+
+    __tablename__ = "feeds"
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String)
+    url = Column(String)
+    link = Column(String)
+    description = Column(String)
+    etag = Column(String)
+    modified = Column(String)
+    articles = relationship("Article", backref="feed")
+    subscribers = relationship("User", secondary=subscriptions, backref="feed")
+
+    updating = Column(Boolean, default=False)
+
+    def __init__(self, url):
+        self.url = url
+
+    def __repr__(self):
+        return "<Feed(\"{0.title}\")>".format(self)
+
+    def update(self):
+        # Check for simultaneous updates.
+        if self.updating:
+            logging.info("Already updating: {0}".format(self.url))
+            return
+
+        # Flag this feed as updating.
+        self.updating = True
+        db.session.add(self)
+        db.session.commit()
+
+        # Fetch and parse the XML tree.
+        tree = feedparser.parse(self.url, etag=self.etag,
+                                modified=self.modified)
+
+        # The feed will return 304 if it hasn't changed since the last check.
+        if tree.status == 304:
+            logging.info("Feed is un-changed: {0}".format(self.url))
+            return
+
+        # Update the feed meta data.
+        fg = tree.feed.get
+        self.title = fg("title")
+        self.link = fg("link")
+        self.description = fg("description")
+        self.etag = tree.get("etag")
+        self.modified = tree.get("modified")
+
+        # Parse the new articles.
+        for e in tree.entries:
+            published = e.published_parsed
+            if published is not None:
+                published = datetime.fromtimestamp(mktime(published))
+            updated = e.updated_parsed
+            if updated is not None:
+                updated = datetime.fromtimestamp(mktime(updated))
+            article = Article(e.get("title"), e.get("author"),
+                              e.get("description"),
+                              published=published,
+                              updated=updated,
+                              feed=self)
+            self.articles.append(article)
+
+        # Commit the changes to the database.
+        self.updating = False
+        db.session.add(self)
+        db.session.commit()
+
+
+class Article(db.Model):
+
+    __tablename__ = "articles"
+
+    id = Column(Integer, primary_key=True)
+    feed_id = Column(Integer, ForeignKey("feeds.id"))
+
+    title = Column(String)
+    author = Column(String)
+    description = Column(String)
+    published = Column(DateTime)
+    updated = Column(DateTime)
+
+    def __init__(self, title, author, description, published=None,
+                 updated=None, feed=None):
+        self.title = title
+        self.author = author
+        self.description = description
+        self.published = published
+        self.updated = updated
+        self.feed = feed
+
+    def __repr__(self):
+        return "<Article(\"{0.title}\")>".format(self)
+
+
+class Reading(db.Model):
+
+    __tablename__ = "readings"
+
+    id = Column(Integer, primary_key=True)
+
+    user = relationship("User", backref="readings")
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    article = relationship("Article")
+    article_id = Column(Integer, ForeignKey("articles.id"))
+
+    read = Column(Boolean, default=False)
+
+    def __init__(self, article, user, read=False):
+        self.article = article
+        self.user = user
+        self.read = read
+
+    def __repr__(self):
+        return "<Reading({0.article}, {0.read})>".format(self)

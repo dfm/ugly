@@ -1,18 +1,7 @@
-@import "normalize";
+@import "globals";
 
 body {
-    font-family: "Helvetica Neue", Helvetica, sans-serif;
     background: #dededa;
-    color: #222226;
-}
-
-a {
-    color: #6666ee;
-    text-decoration: none;
-
-    &:hover {
-        text-decoration: underline;
-    }
 }
 
 .container {
@@ -29,7 +18,6 @@ h1 {
 
 p {
     margin: 5px 0 0;
-    font-size: 16px;
     font-weight: 200;
     font-style: italic;
 

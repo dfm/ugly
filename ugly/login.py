@@ -5,7 +5,7 @@ __all__ = ["login", "oid", "login_manager"]
 
 import flask
 from flask.ext.login import (LoginManager, login_user, logout_user,
-                             login_required, current_user)
+                             login_required)
 from flask.ext.openid import OpenID, COMMON_PROVIDERS
 
 from .database import db
@@ -32,8 +32,8 @@ def user_loader(openid):
 @login.route("/login/<code>")
 @oid.loginhandler
 def index(code=None):
-    if current_user is not None and not current_user.is_anonymous():
-        return flask.redirect(flask.url_for("splash.index"))
+    if flask.g.user is not None:
+        return flask.redirect(flask.url_for("feed.index"))
 
     if code == "connect":
         return try_login()
@@ -68,7 +68,7 @@ def after_login(resp):
         login_user(user)
         return flask.redirect(oid.get_next_url())
 
-    return flask.redirect(flask.url_for(".index"))
+    return flask.redirect(oid.get_next_url())
 
 
 @login.route("/logout")

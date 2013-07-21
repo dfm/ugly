@@ -13,6 +13,9 @@ splash = flask.Blueprint("splash", __name__)
 
 @splash.route("/")
 def index():
+    if flask.g.user is not None:
+        return flask.redirect(flask.url_for("feed.index"))
+
     return flask.render_template("splash/index.html")
 
 

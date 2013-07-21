@@ -1,0 +1,128 @@
+@import "globals";
+
+$sidebar-width: 300px;
+
+body {
+    background: #fff;
+}
+
+h1 {
+    font-size: 22px;
+    line-height: 30px;
+    padding: 10px 0;
+    margin: 5px 0 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+input[type="text"] {
+    font-size: 13px;
+    border: 1px solid #333;
+    border-radius: 3px;
+    padding: 6px 8px 5px;
+    margin-bottom: 15px;
+
+    &:focus {
+        border-color: #6666ee;
+        outline: 0;
+        outline: thin dotted \9; /* IE6-9 */
+    }
+}
+
+.searchbox {
+    position: absolute;
+    right: $sidebar-width + 15px;
+    top: 15px;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 0;
+
+    padding: 0 15px;
+    width: $sidebar-width - 30px;
+
+    background: rgb(222, 222, 218);
+    overflow-y: auto;
+
+    font-size: 13px;
+
+    ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .sidebar-inner {
+        padding-bottom: 50px;
+
+        ul {
+            line-height: 18px;
+
+            input {
+                width: $sidebar-width - 30px - 16px - 2px;
+            }
+        }
+
+        h1 {
+            font-size: inherit;
+            border-bottom: 1px solid #eee;
+            text-align: center;
+            font-weight: normal;
+            text-transform: uppercase;
+        }
+    }
+
+    .sidebar-footer {
+        width: $sidebar-width - 30px;
+        position: fixed;
+        bottom: 0;
+        padding: 10px 0 10px;
+        background: rgba(222, 222, 218, 0.9);
+        font-size: 11px;
+        line-height: 16px;
+        color: #666;
+        text-align: center;
+
+        ul li {
+            font-weight: bold;
+            display: inline-block;
+            margin: 0 5px;
+
+            a {
+                color: inherit;
+            }
+        }
+    }
+}
+
+.container {
+    margin-right: $sidebar-width;
+    padding: 0 15px;
+}
+
+.postblock-small {
+    font-size: 14px;
+    margin: 0 0 10px;
+
+    .title {
+        color: #222226;
+        font-weight: bold;
+    }
+
+    .summary {
+        font-size: 13px;
+        color: #666;
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .date {
+        font-size: 11px;
+        color: #aaa;
+        padding-left: 10px;
+    }
+}
