@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__all__ = ["hash_email", "Invitation", "User", "Feed", "Article", "Reading"]
+__all__ = ["hash_email", "Invitation", "User", "Feed", "Article"]
 
 import os
 import flask
@@ -16,11 +16,6 @@ from sqlalchemy import (Column, Integer, String, Boolean, DateTime,
 from sqlalchemy.orm import relationship
 
 from .database import db
-
-# An auxiliary table for keeping track of user's subscriptions to feeds.
-subscriptions = db.Table("subscriptions",
-                         Column("user_id", Integer, ForeignKey("users.id")),
-                         Column("feed_id", Integer, ForeignKey("feeds.id")))
 
 
 def hash_email(email):
@@ -101,8 +96,6 @@ class User(db.Model):
     name = Column(String)
     apitoken = Column(String)
 
-    feeds = relationship("Feed", secondary=subscriptions)
-
     def __init__(self, email, openid, name):
         # Encrypt and hash the email address.
         self.email = encrypt_email(email)
@@ -152,11 +145,14 @@ class Feed(db.Model):
     etag = Column(String)
     modified = Column(String)
     articles = relationship("Article", backref="feed")
-    subscribers = relationship("User", secondary=subscriptions, backref="feed")
+
+    user = relationship("User", backref="feeds")
+    user_id = Column(Integer, ForeignKey("users.id"))
 
     updating = Column(Boolean, default=False)
 
-    def __init__(self, url):
+    def __init__(self, user, url):
+        self.user = user
         self.url = url
 
     def __repr__(self):
@@ -224,6 +220,8 @@ class Article(db.Model):
     published = Column(DateTime)
     updated = Column(DateTime)
 
+    read = Column(Boolean, default=False)
+
     def __init__(self, title, author, description, published=None,
                  updated=None, feed=None):
         self.title = title
@@ -235,26 +233,3 @@ class Article(db.Model):
 
     def __repr__(self):
         return "<Article(\"{0.title}\")>".format(self)
-
-
-class Reading(db.Model):
-
-    __tablename__ = "readings"
-
-    id = Column(Integer, primary_key=True)
-
-    user = relationship("User", backref="readings")
-    user_id = Column(Integer, ForeignKey("users.id"))
-
-    article = relationship("Article")
-    article_id = Column(Integer, ForeignKey("articles.id"))
-
-    read = Column(Boolean, default=False)
-
-    def __init__(self, article, user, read=False):
-        self.article = article
-        self.user = user
-        self.read = read
-
-    def __repr__(self):
-        return "<Reading({0.article}, {0.read})>".format(self)
