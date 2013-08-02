@@ -3,9 +3,13 @@
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = []
+__all__ = ["run_update"]
 
 import sys
+import feedparser
+from time import mktime
+from datetime import datetime
+
 from ugly import create_app
 from ugly.models import User
 
@@ -18,10 +22,36 @@ else:
 app.test_request_context().push()
 
 
+def check_feed(feed):
+    tree = feedparser.parse(feed.url, etag=feed.etag,
+                            modified=feed.modified)
+
+    # The feed will return 304 if it hasn't changed since the last
+    # check.
+    if tree.status == 304:
+        return
+
+    # Get the feed info.
+    title = tree.feed.get("title")
+    etag = tree.get("etag")
+    modified = tree.get("modified")
+
+    # Parse the new articles.
+    entries = []
+    for e in tree.entries:
+        entries.append({
+            "title": e.get("title"),
+            "body": e.get("description"),
+        })
+
+    return {"title": title,
+            "entries": entries}
+
+
 def run_update():
     for user in User.query.filter_by(active=True):
         for feed in user.feeds:
-            print(feed.url)
+            print(check_feed(feed))
 
 
 if __name__ == "__main__":
