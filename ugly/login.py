@@ -102,3 +102,23 @@ def index():
 def logout():
     logout_user()
     return flask.redirect(flask.url_for("frontend.index"))
+
+
+@login.route("/unsubscribe")
+@login_required
+def unsubscribe():
+    user = flask.g.user
+    user.active = False
+    db.session.add(user)
+    db.session.commit()
+    return flask.redirect(flask.url_for("frontend.index"))
+
+
+@login.route("/resubscribe")
+@login_required
+def resubscribe():
+    user = flask.g.user
+    user.active = True
+    db.session.add(user)
+    db.session.commit()
+    return flask.redirect(flask.url_for("frontend.index"))

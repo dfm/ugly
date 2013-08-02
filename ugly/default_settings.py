@@ -4,7 +4,7 @@ TESTING = False
 SECRET_KEY = "development key"
 
 # App stuff.
-ADMIN_EMAIL = "Ugly RSS <ugly@dfm.io>"
+ADMIN_EMAIL = "Ugly Reader <ugly@dfm.io>"
 AES_KEY = b"test AES key... change this in production"
 
 # Database stuff.

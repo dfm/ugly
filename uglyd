@@ -5,6 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ["run_update"]
 
+import re
 import sys
 import time
 import imaplib
@@ -66,15 +67,18 @@ def check_feed(feed):
 def send_messages(email, token, title, link, entries):
     # Connect to the IMAP server.
     connection = imaplib.IMAP4_SSL("imap.gmail.com")
-    connection.debug = 4
     s = "user={0}\1auth=Bearer {1}\1\1".format(email, token)
     status, data = connection.authenticate("XOAUTH2", lambda x: s)
     assert status == "OK"
 
     # Try to create the mailboxes.
-    mb = "[Ugly RSS]/{0}".format(title)
-    status, data = connection.create("[Ugly RSS]")
+    base = "[Ugly Reader]"
+    mb = "{0}/{1}".format(base, title)
+    status, data = connection.create(base)
     status, data = connection.create(mb)
+
+    # Select the mailbox.
+    status, data = connection.select(mb)
 
     # Loop over the entries.
     for e in entries:
@@ -98,7 +102,16 @@ def send_messages(email, token, title, link, entries):
             ts = imaplib.Time2Internaldate(time.time())
 
         # Add the message to Gmail.
-        connection.append(mb, "", ts, msg.as_string())
+        status, [data] = connection.append(mb, "", ts, msg.as_string())
+        if status == "OK":
+            # Add the base label too.
+            uid = re.findall("\[APPENDUID ([0-9]*) ([0-9]*)\]", data)[0][1]
+            connection.uid("COPY", uid, base)
+        print(data)
+
+    # Clean up.
+    connection.close()
+    connection.logout()
 
 
 def run_update():

@@ -10,18 +10,39 @@ You're logged in as <strong>{{ g.user.get_email() }}</strong>.
 <a href="{{ url_for("login.logout") }}">Logout</a>.
 </p>
 
+<p>
+{% if g.user.active %}
+If you don't want to receive any more emails, you can
+<a href="{{ url_for("login.unsubscribe") }}">opt out</a>.
+{% else %}
+You have opted out of all email contact. Do you
+<a href="{{ url_for("login.resubscribe") }}">want back in</a>?
+{% endif %}
+</p>
+
+<p>
+Here's how this works: you list the feeds that you want to follow and then we
+check for new posts every 15 minutes. If there are any new posts, you'll get
+a message in your Gmail account under the label <strong>[Ugly Reader]/Feed
+Title</strong> with the actual title of the feed.
+</p>
+
 {% if g.user.feeds %}
 <p>
 Your subscriptions:
 </p>
 <ul>
-{% for feed in g.user.feeds %}
-    <li>{{ feed.url }} <a href="?remove={{ feed.url }}" class="unsubscribe">Unsubscribe</a></li>
+{% for feed in g.user.feeds -%}
+    <li>
+        {{ feed.url }}
+        <a href="?remove={{ feed.url }}" class="unsubscribe">Unsubscribe</a>
+    </li>
 {% endfor %}
 </ul>
 {% else %}
 <p>
 You haven't subscribed to any feeds yet.
+How about <a href="?add=xkcd.com">XKCD</a>?
 </p>
 {% endif %}
 

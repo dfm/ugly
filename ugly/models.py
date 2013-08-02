@@ -5,10 +5,7 @@ __all__ = ["hash_email", "User", "Feed"]
 
 import os
 import flask
-import logging
 import requests
-import feedparser
-from time import mktime
 from hashlib import sha1
 from datetime import datetime
 from SimpleAES import SimpleAES
@@ -76,7 +73,6 @@ class User(db.Model):
         self.email = encrypt_email(email)
         self.email_hash = hash_email(email)
         self.joined = datetime.utcnow()
-        self.last_updated = datetime.utcnow()
         self.apitoken = self.generate_token()
         self.refresh_token = refresh_token
         self.active = True
@@ -135,51 +131,3 @@ class Feed(db.Model):
 
     def __repr__(self):
         return "<Feed({0}, \"{1}\")>".format(repr(self.user), self.url)
-
-    def update(self):
-        # Check for simultaneous updates.
-        if self.updating:
-            logging.info("Already updating: {0}".format(self.url))
-            return
-
-        # Flag this feed as updating.
-        self.updating = True
-        db.session.add(self)
-        db.session.commit()
-
-        # Fetch and parse the XML tree.
-        tree = feedparser.parse(self.url, etag=self.etag,
-                                modified=self.modified)
-
-        # The feed will return 304 if it hasn't changed since the last check.
-        if tree.status == 304:
-            logging.info("Feed is un-changed: {0}".format(self.url))
-            return
-
-        # Update the feed meta data.
-        fg = tree.feed.get
-        self.title = fg("title")
-        self.link = fg("link")
-        self.description = fg("description")
-        self.etag = tree.get("etag")
-        self.modified = tree.get("modified")
-
-        # Parse the new articles.
-        for e in tree.entries:
-            published = e.published_parsed
-            if published is not None:
-                published = datetime.fromtimestamp(mktime(published))
-            updated = e.updated_parsed
-            if updated is not None:
-                updated = datetime.fromtimestamp(mktime(updated))
-            article = Article(e.get("title"), e.get("author"),
-                              e.get("description"),
-                              published=published,
-                              updated=updated,
-                              feed=self)
-            self.articles.append(article)
-
-        # Commit the changes to the database.
-        self.updating = False
-        db.session.add(self)
-        db.session.commit()
