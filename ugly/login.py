@@ -30,7 +30,7 @@ def load_user(userid):
 @login.route("/oauth2callback")
 def oauth2callback():
     if "error" in flask.request.args or "code" not in flask.request.args:
-        return "ERROR"
+        return "Error"
 
     # Request a refresh code and an access code.
     code = flask.request.args.get("code")
@@ -44,7 +44,7 @@ def oauth2callback():
     }
     r = requests.post(google_token_url, data=data)
     if r.status_code != requests.codes.ok:
-        return "ERROR"
+        return "Bad response"
 
     # Parse the response.
     data = r.json()
@@ -60,7 +60,7 @@ def oauth2callback():
     user = User.query.filter_by(email_hash=hash_email(email)).first()
     if user is None:
         if refresh_token is None:
-            return "ERROR"
+            return "No refresh token"
         user = User(email, refresh_token)
 
     elif refresh_token is not None:
