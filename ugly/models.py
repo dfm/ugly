@@ -114,7 +114,7 @@ class User(db.Model):
         }
         r = requests.post("https://accounts.google.com/o/oauth2/token",
                           data=data)
-        return r.json()["access_token"]
+        return r.json().get("access_token")
 
 
 class Feed(db.Model):

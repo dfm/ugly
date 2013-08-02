@@ -6,13 +6,20 @@ from __future__ import division, print_function, absolute_import
 __all__ = ["run_update"]
 
 import sys
+import time
+import imaplib
 import feedparser
-from time import mktime
-from datetime import datetime
+from jinja2 import Template
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 from ugly import create_app
 from ugly.models import User
+from ugly.database import db
 
+
+# Read in the Jinja2 template.
+msg_template = Template(open("message.html").read())
 
 # Set up the required DB context.
 if "--config" in sys.argv:
@@ -26,15 +33,17 @@ def check_feed(feed):
     tree = feedparser.parse(feed.url, etag=feed.etag,
                             modified=feed.modified)
 
+    # Get the feed info.
+    title = tree.feed.get("title")
+
     # The feed will return 304 if it hasn't changed since the last
     # check.
     if tree.status == 304:
-        return
+        return title, []
 
-    # Get the feed info.
-    title = tree.feed.get("title")
-    etag = tree.get("etag")
-    modified = tree.get("modified")
+    # Update the feed refresh parameters.
+    feed.etag = tree.get("etag")
+    feed.modified = tree.get("modified")
 
     # Parse the new articles.
     entries = []
@@ -42,16 +51,66 @@ def check_feed(feed):
         entries.append({
             "title": e.get("title"),
             "body": e.get("description"),
+            "published": e.get("published_parsed"),
+            "updated": e.get("updated_parsed"),
+            "link": e.get("link"),
         })
 
-    return {"title": title,
-            "entries": entries}
+    # Update the database.
+    db.session.add(feed)
+
+    return title, entries
+
+
+def send_messages(email, token, title, entries):
+    # Connect to the IMAP server.
+    connection = imaplib.IMAP4_SSL("imap.gmail.com")
+    connection.debug = 4
+    s = "user={0}\1auth=Bearer {1}\1\1".format("foreman.mackey@gmail.com",
+                                               token)
+    status, data = connection.authenticate("XOAUTH2", lambda x: s)
+    assert status == "OK"
+
+    # Try to create the mailboxes.
+    mb = "[Ugly RSS]/{0}".format(title)
+    status, data = connection.create("[Ugly RSS]")
+    status, data = connection.create(mb)
+
+    # Loop over the entries.
+    for e in entries:
+        # Create the message.
+        msg = MIMEMultipart("alternative")
+        msg["From"] = app.config["ADMIN_EMAIL"]
+        msg["To"] = email
+        msg["Subject"] = u"{0} — {1}".format(title, e["title"])
+        contents = msg_template.render(**e)
+        part = MIMEText(contents.encode("utf-8"), "html", "utf-8")
+        msg.attach(part)
+
+        # Work out the time stamp.
+        if e["updated"] is not None:
+            ts = imaplib.Time2Internaldate(time.mktime(e["updated"]))
+        elif e["published"] is not None:
+            ts = imaplib.Time2Internaldate(time.mktime(e["published"]))
+        else:
+            ts = imaplib.Time2Internaldate(time.time())
+
+        # Add the message to Gmail.
+        connection.append(mb, "", ts, msg.as_string())
 
 
 def run_update():
     for user in User.query.filter_by(active=True):
+        email, token = user.get_email(), None
         for feed in user.feeds:
-            print(check_feed(feed))
+            title, entries = check_feed(feed)
+
+            if len(entries):
+                if token is None:
+                    token = user.get_oauth2_token()
+                send_messages(email, token, title, entries)
+
+            db.session.commit()
 
 
 if __name__ == "__main__":
