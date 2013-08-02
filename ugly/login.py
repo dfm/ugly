@@ -1,74 +1,91 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__all__ = ["login", "oid", "login_manager"]
+__all__ = ["login", "login_manager"]
 
+import urllib
+import requests
 import flask
 from flask.ext.login import (LoginManager, login_user, logout_user,
                              login_required)
-from flask.ext.openid import OpenID, COMMON_PROVIDERS
 
 from .database import db
-from .models import Invitation, User
+from .models import User, hash_email
 
 login = flask.Blueprint("login", __name__)
 
-oid = OpenID()
 login_manager = LoginManager()
 login_manager.login_view = "login.index"
 
-
-def try_login():
-    return oid.try_login(COMMON_PROVIDERS["google"], ask_for=["email",
-                                                              "fullname"])
+google_oauth2_url = "https://accounts.google.com/o/oauth2/auth"
+google_token_url = "https://accounts.google.com/o/oauth2/token"
+google_info_url = "https://www.googleapis.com/oauth2/v2/userinfo"
 
 
 @login_manager.user_loader
-def user_loader(openid):
-    return User.query.filter_by(openid=openid).first()
+def load_user(userid):
+    return User.query.filter_by(id=userid).first()
+
+
+@login.route("/oauth2callback")
+def oauth2callback():
+    if "error" in flask.request.args or "code" not in flask.request.args:
+        return "ERROR"
+
+    # Request a refresh code and an access code.
+    code = flask.request.args.get("code")
+    data = {
+        "code": code,
+        "client_id": flask.current_app.config["GOOGLE_OAUTH2_CLIENT_ID"],
+        "client_secret":
+        flask.current_app.config["GOOGLE_OAUTH2_CLIENT_SECRET"],
+        "redirect_uri": flask.url_for(".oauth2callback", _external=True),
+        "grant_type": "authorization_code",
+    }
+    r = requests.post(google_token_url, data=data)
+    if r.status_code != requests.codes.ok:
+        return "ERROR"
+
+    # Parse the response.
+    data = r.json()
+    access_token = data.get("access_token")
+    refresh_token = data.get("refresh_token", None)
+
+    # Get the user information (email, id, etc.).
+    r = requests.get(google_info_url, params={"access_token": access_token})
+    data = r.json()
+    email = data.get("email")
+
+    # Find the user entry if it already exists.
+    user = User.query.filter_by(email_hash=hash_email(email)).first()
+    if user is None:
+        if refresh_token is None:
+            return "ERROR"
+        user = User(email, refresh_token)
+
+    elif refresh_token is not None:
+        user.refresh_token = refresh_token
+
+    db.session.add(user)
+    db.session.commit()
+
+    login_user(user)
+
+    return user.get_email()
 
 
 @login.route("/login")
-@login.route("/login/<code>")
-@oid.loginhandler
-def index(code=None):
-    if flask.g.user is not None:
-        return flask.redirect(flask.url_for("feed.index"))
-
-    if code == "connect":
-        return try_login()
-
-    if code is not None:
-        existing = Invitation.query.filter_by(code=code).first()
-        if existing is not None and existing.sent:
-            # Save the code in the session and allow Google sign-in.
-            flask.session["invitation"] = code
-            return try_login()
-
-    return flask.render_template("login.html")
-
-
-@oid.after_login
-def after_login(resp):
-    # Check if the user exists already.
-    user = User.query.filter_by(openid=resp.identity_url).first()
-
-    # See if there is a code stored in the session.
-    code = flask.session.pop("invitation", None)
-    if user is None and code is not None:
-        existing = Invitation.query.filter_by(code=code).first()
-        if existing is not None:
-            if existing.sent:
-                user = User(resp.email, resp.identity_url, resp.fullname)
-                db.session.add(user)
-            db.session.delete(existing)
-            db.session.commit()
-
-    if user is not None:
-        login_user(user)
-        return flask.redirect(oid.get_next_url())
-
-    return flask.redirect(oid.get_next_url())
+def index():
+    params = {
+        "response_type": "code",
+        "scope": "https://www.googleapis.com/auth/userinfo.email "
+                 "https://mail.google.com/",
+        "client_id": flask.current_app.config["GOOGLE_OAUTH2_CLIENT_ID"],
+        "redirect_uri": flask.url_for(".oauth2callback", _external=True),
+        "access_type": "offline",
+    }
+    return flask.redirect(google_oauth2_url
+                          + "?{0}".format(urllib.urlencode(params)))
 
 
 @login.route("/logout")

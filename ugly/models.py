@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__all__ = ["hash_email", "Invitation", "User", "Feed", "Article"]
+__all__ = ["hash_email", "User", "Feed"]
 
 import os
 import flask
 import logging
+import requests
 import feedparser
 from time import mktime
 from hashlib import sha1
@@ -54,34 +55,6 @@ def decrypt_email(enc_email):
     return aes.decrypt(enc_email)
 
 
-class Invitation(db.Model):
-
-    __tablename__ = "invitations"
-
-    id = Column(Integer, primary_key=True)
-    email = Column(String)
-    code = Column(String)
-    sent = Column(Boolean)
-    created = Column(DateTime)
-
-    def __init__(self, email, sent=False):
-        # Encrypt and hash the email address.
-        self.email = hash_email(email)
-
-        # Generate an invitation code.
-        self.code = sha1(os.urandom(24)).hexdigest()
-
-        # Invitation sent flag.
-        self.sent = sent
-
-        # Date of registration.
-        self.created = datetime.utcnow()
-
-    def __repr__(self):
-        return "<Invitation(\"{0}\", sent={1})>".format(self.email,
-                                                        self.sent)
-
-
 class User(db.Model):
 
     __tablename__ = "users"
@@ -89,42 +62,40 @@ class User(db.Model):
     id = Column(Integer, primary_key=True)
 
     email = Column(String)
-    hemail = Column(String)
+    email_hash = Column(String)
     joined = Column(DateTime)
 
-    openid = Column(String)
-    name = Column(String)
-    apitoken = Column(String)
+    active = Column(Boolean)
+    last_updated = Column(DateTime)
 
-    def __init__(self, email, openid, name):
-        # Encrypt and hash the email address.
+    refresh_token = Column(String)
+
+    api_token = Column(String)
+
+    def __init__(self, email, refresh_token):
         self.email = encrypt_email(email)
-        self.hemail = hash_email(email)
-
-        # Date of registration.
+        self.email_hash = hash_email(email)
         self.joined = datetime.utcnow()
-
-        # Initialize the OpenID stuff.
-        self.openid = openid
-        self.name = name
-
-        # Generate an API token.
+        self.last_updated = datetime.utcnow()
         self.apitoken = self.generate_token()
+        self.refresh_token = refresh_token
+        self.active = True
 
     def __repr__(self):
-        return "<User(\"{0}\")>".format(self.get_email())
+        return "<User(\"{0}\", \"{1}\")>".format(self.get_email(),
+                                                 self.refresh_token)
 
     def get_email(self):
         return decrypt_email(self.email)
 
     def get_id(self):
-        return self.openid
+        return self.id
 
     def is_authenticated(self):
-        return self.openid is not None
+        return self.refresh_token is not None
 
     def is_active(self):
-        return self.openid is not None
+        return self.refresh_token is not None
 
     def is_anonymous(self):
         return False
@@ -132,31 +103,38 @@ class User(db.Model):
     def generate_token(self):
         return sha1(os.urandom(8) + self.email + os.urandom(8)).hexdigest()
 
+    def get_oauth2_token(self):
+        data = {
+            "refresh_token": self.refresh_token,
+            "client_id":
+            flask.current_app.config["GOOGLE_OAUTH2_CLIENT_ID"],
+            "client_secret":
+            flask.current_app.config["GOOGLE_OAUTH2_CLIENT_SECRET"],
+            "grant_type": "refresh_token",
+        }
+        r = requests.post("https://accounts.google.com/o/oauth2/token",
+                          data=data)
+        return r.json()["access_token"]
+
 
 class Feed(db.Model):
 
     __tablename__ = "feeds"
 
     id = Column(Integer, primary_key=True)
-    title = Column(String)
     url = Column(String)
-    link = Column(String)
-    description = Column(String)
     etag = Column(String)
     modified = Column(String)
-    articles = relationship("Article", backref="feed")
 
     user = relationship("User", backref="feeds")
     user_id = Column(Integer, ForeignKey("users.id"))
-
-    updating = Column(Boolean, default=False)
 
     def __init__(self, user, url):
         self.user = user
         self.url = url
 
     def __repr__(self):
-        return "<Feed(\"{0.title}\")>".format(self)
+        return "<Feed({0}, \"{1}\")>".format(repr(self.user), self.url)
 
     def update(self):
         # Check for simultaneous updates.
@@ -205,31 +183,3 @@ class Feed(db.Model):
         self.updating = False
         db.session.add(self)
         db.session.commit()
-
-
-class Article(db.Model):
-
-    __tablename__ = "articles"
-
-    id = Column(Integer, primary_key=True)
-    feed_id = Column(Integer, ForeignKey("feeds.id"))
-
-    title = Column(String)
-    author = Column(String)
-    description = Column(String)
-    published = Column(DateTime)
-    updated = Column(DateTime)
-
-    read = Column(Boolean, default=False)
-
-    def __init__(self, title, author, description, published=None,
-                 updated=None, feed=None):
-        self.title = title
-        self.author = author
-        self.description = description
-        self.published = published
-        self.updated = updated
-        self.feed = feed
-
-    def __repr__(self):
-        return "<Article(\"{0.title}\")>".format(self)

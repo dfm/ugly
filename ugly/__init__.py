@@ -6,7 +6,7 @@ __all__ = ["create_app"]
 import flask
 from flask.ext.login import current_user
 
-from .login import oid, login_manager
+from .login import login_manager
 from .database import db
 
 
@@ -26,8 +26,7 @@ def create_app(config_filename=None):
     # Setup database.
     db.init_app(app)
 
-    # Setup Login/OpenID.
-    oid.init_app(app)
+    # Setup Login.
     login_manager.init_app(app)
 
     # Before request.

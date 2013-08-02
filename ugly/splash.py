@@ -6,7 +6,7 @@ __all__ = ["splash"]
 import flask
 
 from .database import db
-from .models import hash_email, Invitation
+from .models import hash_email
 
 splash = flask.Blueprint("splash", __name__)
 

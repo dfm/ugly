@@ -8,3 +8,5 @@ dist
 MANIFEST
 .sass-cache
 data
+local.py
+email_test.py
