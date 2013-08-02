@@ -35,11 +35,12 @@ def check_feed(feed):
 
     # Get the feed info.
     title = tree.feed.get("title")
+    link = tree.feed.get("link")
 
     # The feed will return 304 if it hasn't changed since the last
     # check.
     if tree.status == 304:
-        return title, []
+        return title, link, []
 
     # Update the feed refresh parameters.
     feed.etag = tree.get("etag")
@@ -59,15 +60,14 @@ def check_feed(feed):
     # Update the database.
     db.session.add(feed)
 
-    return title, entries
+    return title, link, entries
 
 
-def send_messages(email, token, title, entries):
+def send_messages(email, token, title, link, entries):
     # Connect to the IMAP server.
     connection = imaplib.IMAP4_SSL("imap.gmail.com")
     connection.debug = 4
-    s = "user={0}\1auth=Bearer {1}\1\1".format("foreman.mackey@gmail.com",
-                                               token)
+    s = "user={0}\1auth=Bearer {1}\1\1".format(email, token)
     status, data = connection.authenticate("XOAUTH2", lambda x: s)
     assert status == "OK"
 
@@ -83,7 +83,9 @@ def send_messages(email, token, title, entries):
         msg["From"] = app.config["ADMIN_EMAIL"]
         msg["To"] = email
         msg["Subject"] = u"{0} — {1}".format(title, e["title"])
-        contents = msg_template.render(**e)
+        contents = msg_template.render(feed_title=title,
+                                       feed_link=link,
+                                       **e)
         part = MIMEText(contents.encode("utf-8"), "html", "utf-8")
         msg.attach(part)
 
@@ -101,17 +103,26 @@ def send_messages(email, token, title, entries):
 
 def run_update():
     for user in User.query.filter_by(active=True):
+        print(user)
         email, token = user.get_email(), None
         for feed in user.feeds:
-            title, entries = check_feed(feed)
+            title, link, entries = check_feed(feed)
 
             if len(entries):
                 if token is None:
                     token = user.get_oauth2_token()
-                send_messages(email, token, title, entries)
+                print("Sending {0} messages for {1}".format(len(entries),
+                                                            title))
+                send_messages(email, token, title, link, entries)
 
             db.session.commit()
 
 
 if __name__ == "__main__":
-    run_update()
+    while True:
+        strt = time.time()
+        run_update()
+        delta = 15. * 60 - time.time() + strt
+        if delta > 0:
+            print("Waiting")
+            time.sleep(delta)
