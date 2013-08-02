@@ -71,7 +71,7 @@ def oauth2callback():
 
     login_user(user)
 
-    return user.get_email()
+    return flask.redirect(flask.url_for("frontend.index"))
 
 
 @login.route("/login")
@@ -92,4 +92,4 @@ def index():
 @login_required
 def logout():
     logout_user()
-    return flask.redirect(flask.url_for("splash.index"))
+    return flask.redirect(flask.url_for("frontend.index"))

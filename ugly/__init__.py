@@ -33,14 +33,11 @@ def create_app(config_filename=None):
     app.before_request(before_request)
 
     # Bind the blueprints.
-    from .splash import splash
-    app.register_blueprint(splash)
+    from .frontend import frontend
+    app.register_blueprint(frontend)
 
     from .login import login
     app.register_blueprint(login)
-
-    from .feed import feed
-    app.register_blueprint(feed)
 
     from .api import api
     app.register_blueprint(api, url_prefix="/api")

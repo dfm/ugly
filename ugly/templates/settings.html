@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="header">
+    <h1>Your Ugly Reader</h1>
+</div>
+
+<p>
+You're logged in as <strong>{{ g.user.get_email() }}</strong>.
+<a href="{{ url_for("login.logout") }}">Logout</a>.
+</p>
+
+{% if g.user.feeds %}
+<p>
+Your subscriptions:
+</p>
+<ul>
+{% for feed in g.user.feeds %}
+    <li>{{ feed.url }} <a href="?remove={{ feed.url }}" class="unsubscribe">Unsubscribe</a></li>
+{% endfor %}
+</ul>
+{% else %}
+<p>
+You haven't subscribed to any feeds yet.
+</p>
+{% endif %}
+
+<div class="new-feed-block">
+    <form action="" id="add-feed-form">
+        <input name="add" type="text" placeholder="Enter a feed URL"></input>
+        <a href="javascript:document.getElementById('add-feed-form').submit();" class="btn">Add a new feed</a>
+    </form>
+</div>
+
+{% endblock %}

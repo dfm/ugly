@@ -3,11 +3,23 @@
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <title>The Ugliest of All RSS Readers</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/splash.css') }}" type="text/css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ugly.css') }}" type="text/css" />
 </head>
 <body>
     <div class="container">
+
+        {% if error %}
+        <div id="error">
+            <strong>Error:</strong> {{ error }}.
+        </div>
+        {% endif %}
+
         {% block content %}{% endblock %}
+
+        <div class="footer">
+            Built with ♥ by <a href="http://dan.iel.fm">Dan Foreman-Mackey</a>.
+        </div>
+
     </div>
 </body>
 </html>
