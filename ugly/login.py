@@ -29,8 +29,10 @@ def load_user(userid):
 
 @login.route("/oauth2callback")
 def oauth2callback():
-    if "error" in flask.request.args or "code" not in flask.request.args:
-        return "Error"
+    error = flask.request.args.get("error", None)
+    if error is not None or "code" not in flask.request.args:
+        error = "Something went wrong and we couldn't log you in."
+        return flask.redirect(flask.url_for("frontend.index", error=error))
 
     # Request a refresh code and an access code.
     code = flask.request.args.get("code")
@@ -44,7 +46,9 @@ def oauth2callback():
     }
     r = requests.post(google_token_url, data=data)
     if r.status_code != requests.codes.ok:
-        return "Bad response"
+        return flask.redirect(flask.url_for("frontend.index",
+                                            error="Something went wrong with "
+                                                  "the Google API."))
 
     # Parse the response.
     data = r.json()
@@ -60,7 +64,12 @@ def oauth2callback():
     user = User.query.filter_by(email_hash=hash_email(email)).first()
     if user is None:
         if refresh_token is None:
-            return "No refresh token"
+            error = ("The Google API didn't return a refresh token. "
+                     "Revoke access by clicking "
+                     "<a href='https://accounts.google.com/b/0/"
+                     "IssuedAuthSubTokens' target='_blank'>here</a> and then "
+                     "try again.")
+            return flask.redirect(flask.url_for("frontend.index", error=error))
         user = User(email, refresh_token)
 
     elif refresh_token is not None:

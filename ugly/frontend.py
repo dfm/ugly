@@ -19,7 +19,8 @@ def index():
     if flask.g.user is not None:
         return flask.redirect(flask.url_for(".settings"))
 
-    return flask.render_template("splash.html")
+    return flask.render_template("splash.html",
+                                 error=flask.request.args.get("error"))
 
 
 @frontend.route("/settings")
