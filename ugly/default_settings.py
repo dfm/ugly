@@ -5,6 +5,7 @@ SECRET_KEY = "development key"
 
 # App stuff.
 ADMIN_EMAIL = "Ugly Reader <ugly@dfm.io>"
+BASE_MAILBOX = "[Ugly Reader]"
 AES_KEY = b"test AES key... change this in production"
 
 # Database stuff.

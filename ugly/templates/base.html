@@ -10,7 +10,7 @@
 
         {% if error %}
         <div id="error">
-            <strong>Error:</strong> {{ error }}
+            <strong>Error:</strong> {{ error|safe }}
         </div>
         {% endif %}
 

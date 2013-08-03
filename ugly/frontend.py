@@ -8,7 +8,7 @@ from flask.ext.login import login_required
 
 import feedfinder
 
-from .models import Feed
+from .models import User, Feed
 from .database import db
 
 frontend = flask.Blueprint("frontend", __name__)
@@ -36,13 +36,19 @@ def settings():
             error = "Invalid feed URL."
 
         else:
-            # Check if the user is already subscribed.
-            feed = Feed.query.filter_by(user_id=flask.g.user.id,
-                                        url=url).first()
+            feed = db.session.query(Feed).join(User.feeds) \
+                .filter(User.id == flask.g.user.id) \
+                .filter(Feed.url == url).first()
 
             if feed is None:
-                feed = Feed(flask.g.user, url)
-                db.session.add(feed)
+                feed = Feed.query.filter(Feed.url == url).first()
+
+                if feed is None:
+                    feed = Feed(url)
+                    db.session.add(feed)
+
+                flask.g.user.feeds.append(feed)
+                db.session.add(flask.g.user)
                 db.session.commit()
 
             else:
@@ -51,13 +57,16 @@ def settings():
     # Unsubscribe from a feed.
     remove_url = flask.request.args.get("remove", None)
     if remove_url is not None:
-        feed = Feed.query.filter_by(user_id=flask.g.user.id,
-                                    url=remove_url).first()
+        feed = db.session.query(Feed).join(User.feeds) \
+            .filter(User.id == flask.g.user.id) \
+            .filter(Feed.url == remove_url).first()
+
         if feed is None:
             error = "Couldn't unsubscribe you from that feed."
 
         else:
-            db.session.delete(feed)
+            flask.g.user.feeds.remove(feed)
+            db.session.add(flask.g.user)
             db.session.commit()
 
     return flask.render_template("settings.html", error=error)

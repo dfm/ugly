@@ -1,7 +1,7 @@
-<h2><a href="{{link}}">{{title}}</a></h2>
-<p><i>From <a href="{{feed_link}}">{{feed_title}}</a></i></p>
+<h2><a href="{{entry.link}}">{{entry.title|safe}}</a></h2>
+<p><i>From <a href="{{feed.link}}">{{feed.title|safe}}</a></i></p>
 <p><br></p>
-{{body}}
+{{entry.body|safe}}
 <p><br><br></p>
 <p style="border-top: 2px solid #efefea;">
 <small style="color: #666;">This email was sent by the
