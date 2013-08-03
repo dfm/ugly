@@ -107,7 +107,6 @@ def send_messages(email, token, title, link, entries):
             # Add the base label too.
             uid = re.findall("\[APPENDUID ([0-9]*) ([0-9]*)\]", data)[0][1]
             connection.uid("COPY", uid, base)
-        print(data)
 
     # Clean up.
     connection.close()
