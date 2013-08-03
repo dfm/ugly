@@ -3,24 +3,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = ["run_update"]
+__all__ = ["update_feeds", "send_emails"]
 
-import re
 import sys
 import time
-import imaplib
-import feedparser
-from jinja2 import Template
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
 from ugly import create_app
-from ugly.models import User
-from ugly.database import db
-
-
-# Read in the Jinja2 template.
-msg_template = Template(open("message.html").read())
+from ugly.models import User, Feed
 
 # Set up the required DB context.
 if "--config" in sys.argv:
@@ -30,111 +18,28 @@ else:
 app.test_request_context().push()
 
 
-def check_feed(feed):
-    tree = feedparser.parse(feed.url, etag=feed.etag,
-                            modified=feed.modified)
-
-    # Get the feed info.
-    title = tree.feed.get("title")
-    link = tree.feed.get("link")
-
-    # The feed will return 304 if it hasn't changed since the last
-    # check.
-    if tree.status == 304:
-        return title, link, []
-
-    # Update the feed refresh parameters.
-    feed.etag = tree.get("etag")
-    feed.modified = tree.get("modified")
-
-    # Parse the new articles.
-    entries = []
-    for e in tree.entries:
-        entries.append({
-            "title": e.get("title"),
-            "body": e.get("description"),
-            "published": e.get("published_parsed"),
-            "updated": e.get("updated_parsed"),
-            "link": e.get("link"),
-        })
-
-    # Update the database.
-    db.session.add(feed)
-
-    return title, link, entries
+def update_feeds():
+    for feed in Feed.query:
+        feed.update()
 
 
-def send_messages(email, token, title, link, entries):
-    # Connect to the IMAP server.
-    connection = imaplib.IMAP4_SSL("imap.gmail.com")
-    s = "user={0}\1auth=Bearer {1}\1\1".format(email, token)
-    status, data = connection.authenticate("XOAUTH2", lambda x: s)
-    assert status == "OK"
-
-    # Try to create the mailboxes.
-    base = "[Ugly Reader]"
-    mb = "{0}/{1}".format(base, title)
-    status, data = connection.create(base)
-    status, data = connection.create(mb)
-
-    # Select the mailbox.
-    status, data = connection.select(mb)
-
-    # Loop over the entries.
-    for e in entries:
-        # Create the message.
-        msg = MIMEMultipart("alternative")
-        msg["From"] = app.config["ADMIN_EMAIL"]
-        msg["To"] = email
-        msg["Subject"] = u"{0} — {1}".format(title, e["title"])
-        contents = msg_template.render(feed_title=title,
-                                       feed_link=link,
-                                       **e)
-        part = MIMEText(contents.encode("utf-8"), "html", "utf-8")
-        msg.attach(part)
-
-        # Work out the time stamp.
-        if e["updated"] is not None:
-            ts = imaplib.Time2Internaldate(time.mktime(e["updated"]))
-        elif e["published"] is not None:
-            ts = imaplib.Time2Internaldate(time.mktime(e["published"]))
-        else:
-            ts = imaplib.Time2Internaldate(time.time())
-
-        # Add the message to Gmail.
-        status, [data] = connection.append(mb, "", ts, msg.as_string())
-        if status == "OK":
-            # Add the base label too.
-            uid = re.findall("\[APPENDUID ([0-9]*) ([0-9]*)\]", data)[0][1]
-            connection.uid("COPY", uid, base)
-
-    # Clean up.
-    connection.close()
-    connection.logout()
-
-
-def run_update():
-    for user in User.query.filter_by(active=True):
-        print(user)
-        email, token = user.get_email(), None
-        for feed in user.feeds:
-            title, link, entries = check_feed(feed)
-
-            if len(entries):
-                if token is None:
-                    token = user.get_oauth2_token()
-                print("Sending {0} messages for {1}".format(len(entries),
-                                                            title))
-                send_messages(email, token, title, link, entries)
-
-            db.session.commit()
+def send_emails():
+    for user in User.query:
+        user.deliver_entries()
 
 
 if __name__ == "__main__":
     while True:
         strt = time.time()
-        run_update()
+
+        print("Updating feeds...")
+        update_feeds()
+        print("... took {0} seconds".format(time.time() - strt))
+
+        print("Sending emails...")
+        send_emails()
+
         delta = 15. * 60 - time.time() + strt
         if delta > 0:
-            print("Waiting")
+            print("Waiting...")
             time.sleep(delta)
