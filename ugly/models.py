@@ -253,8 +253,8 @@ class Feed(db.Model):
         # Loop over the entries.
         for e in tree.entries:
             # See if the entry already exists.
-            entry = Entry.query.filter(Entry.feed == self)\
-                .filter(Entry.ref == e.id).first()
+            entry = Entry.query.filter(Entry.feed == self) \
+                .filter(Entry.ref == (e.get("id") or e.get("link"))).first()
             if entry is not None:
                 continue
 
@@ -286,7 +286,7 @@ class Entry(db.Model):
     def __init__(self, feed, entry):
         self.feed = feed
 
-        self.ref = entry.id
+        self.ref = entry.get("id") or entry.get("link")
         self.link = entry.get("link")
         self.body = entry.get("description")
         self.title = entry.get("title")
