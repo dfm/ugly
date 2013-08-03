@@ -10,7 +10,7 @@ from hashlib import sha1
 from datetime import datetime
 from SimpleAES import SimpleAES
 from sqlalchemy import (Column, Integer, String, Boolean, DateTime,
-                        ForeignKey)
+                        ForeignKey, Table)
 from sqlalchemy.orm import relationship
 
 from .database import db
@@ -52,6 +52,17 @@ def decrypt_email(enc_email):
     return aes.decrypt(enc_email)
 
 
+# Association tables.
+subscriptions = Table("subscriptions", db.Model.metadata,
+                      Column("user_id", Integer, ForeignKey("users.id")),
+                      Column("feed_id", Integer, ForeignKey("feeds.id")))
+
+user_entry = Table("user_entry", db.Model.metadata,
+                   Column("user_id", Integer, ForeignKey("users.id")),
+                   Column("entry_id", Integer, ForeignKey("entries.id")))
+
+
+# Data models.
 class User(db.Model):
 
     __tablename__ = "users"
@@ -63,11 +74,12 @@ class User(db.Model):
     joined = Column(DateTime)
 
     active = Column(Boolean)
-    last_updated = Column(DateTime)
-
     refresh_token = Column(String)
 
     api_token = Column(String)
+
+    feeds = relationship("Feed", secondary=subscriptions, backref="users")
+    entries = relationship("Entry", secondary=user_entry, backref="users")
 
     def __init__(self, email, refresh_token):
         self.email = encrypt_email(email)
@@ -122,12 +134,26 @@ class Feed(db.Model):
     etag = Column(String)
     modified = Column(String)
 
-    user = relationship("User", backref="feeds")
-    user_id = Column(Integer, ForeignKey("users.id"))
-
-    def __init__(self, user, url):
-        self.user = user
+    def __init__(self, url):
         self.url = url
 
     def __repr__(self):
         return "<Feed({0}, \"{1}\")>".format(repr(self.user), self.url)
+
+
+class Entry(db.Model):
+
+    __tablename__ = "entries"
+
+    id = Column(Integer, primary_key=True)
+    ref = Column(String)
+
+    feed = relationship("Feed", backref="entries")
+    feed_id = Column(Integer, ForeignKey("feeds.id"))
+
+    def __init__(self, ref, feed):
+        self.ref = ref
+        self.feed = feed
+
+    def __repr__(self):
+        return "<Entry(\"{0}\", {1})>".format(self.ref, repr(self.feed))
