@@ -10,9 +10,13 @@
     <div class="container">
         {% block content -%}{%- endblock %}
         <div class="footer">
-            <div class="left">
-                About | Contact | Privacy
-            </div>
+            <ul class="left">
+                <li><a href="{{ url_for('.about') }}">About</a></li>{% if config["CONTACT_URL"] -%}
+                <li><a href="{{ config["CONTACT_URL"] }}">Contact</a></li>
+                {%- endif %}<li><a href="{{ url_for('.privacy') }}">Privacy</a></li>{% if current_user.is_authenticated() -%}
+                <li><a href="{{ url_for('.settings') }}">Settings</a><li><a href="{{ url_for('login.logout') }}">Logout</a></li>
+                {%- endif %}
+            </ul>
             <div class="right">
                 Built with ♥ by
                 <a href="http://dan.iel.fm">Dan Foreman-Mackey</a>.

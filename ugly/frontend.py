@@ -18,6 +18,16 @@ def index():
                                  error=flask.request.args.get("error"))
 
 
+@frontend.route("/about")
+def about():
+    return flask.render_template("about.html")
+
+
+@frontend.route("/privacy")
+def privacy():
+    return flask.render_template("privacy.html")
+
+
 @frontend.route("/settings")
 @login_required
 def settings():

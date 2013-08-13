@@ -76,6 +76,31 @@ a {
     padding: 45px 0;
     margin: 50px 0;
     font-size: 13px;
+
+    ul {
+        display: block;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+            display: inline;
+            margin: 0 14px 0 0;
+            padding: 0 14px 0 0;
+            border-right: 1px solid #ddd;
+            &:last-child {
+                border: 0;
+            }
+        }
+    }
+
+    .left {
+        float: left;
+    }
+
+    .right {
+        float: right;
+    }
 }
 
 .login-block {
