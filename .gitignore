@@ -10,3 +10,4 @@ MANIFEST
 data
 local.py
 email_test.py
+uglyd.*
