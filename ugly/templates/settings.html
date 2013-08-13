@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
+<div id="error">
+    <button type="button" class="close" data-dismiss="#error">&times;</button>
+    <strong>Error:</strong> <span id="error-message"></span>
+</div>
 
 <div class="header">
     <h1>Your Ugly Reader</h1>
@@ -27,24 +31,7 @@ a message in your Gmail account under the label <strong>[Ugly Reader]/Feed
 Title</strong> with the actual title of the feed.
 </p>
 
-{% if g.user.feeds %}
-<p>
-Your subscriptions:
-</p>
-<ul>
-{% for feed in g.user.feeds -%}
-    <li>
-        <a href="{{ feed.link }}">{{ feed.title }}</a>
-        <a href="?remove={{ feed.url }}" class="unsubscribe">Unsubscribe</a>
-    </li>
-{% endfor %}
-</ul>
-{% else %}
-<p>
-You haven't subscribed to any feeds yet.
-How about <a href="?add=xkcd.com">XKCD</a>?
-</p>
-{% endif %}
+<div id="feeds-view"></div>
 
 <div class="new-feed-block">
     <form action="" id="add-feed-form">
@@ -53,4 +40,25 @@ How about <a href="?add=xkcd.com">XKCD</a>?
     </form>
 </div>
 
+<script type="text/html" id="feeds-template">
+<% if (feeds.length > 0) { %>
+<p>Your subscriptions:</p>
+<% } else { %>
+<p>You haven't subscribed to any feeds yet.
+How about <a href="?add=xkcd.com">XKCD</a>?</p>
+<% } %>
+</script>
+<script type="text/html" id="feed-template">
+<a href="<%= link %>"><%= title %></a>
+<span class="unsubscribe">(Unsubscribe)</span>
+</script>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/json2.js') }}"></script>
+<script src="{{ url_for('static', filename='js/zepto-min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/underscore-min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/backbone-min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ugly.js') }}"></script>
 {% endblock %}

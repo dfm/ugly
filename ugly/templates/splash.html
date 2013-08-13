@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
-
+{% if error -%}
+<div id="error" style="display: block;">
+    <strong>Error:</strong> {{ error|safe }}
+</div>
+{%- endif %}
 <div class="header">
     <h1>Ugly Reader</h1>
     <h2>The <strong>ugliest</strong> Google Reader replacement on the market.</h2>
 </div>
-
 <p>
 <strong>Ugly Reader</strong> provides an interface between your favorite
 blogs and the best Google Reader replacement yet: Gmail. All you have to do is

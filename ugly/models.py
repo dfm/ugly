@@ -225,13 +225,14 @@ class Feed(db.Model):
     url = Column(String)
     link = Column(String)
     title = Column(String)
-    active = Column(Boolean, default=True)
+    active = Column(Boolean)
 
     etag = Column(String)
     modified = Column(String)
 
     def __init__(self, url):
         self.url = url
+        self.active = True
 
     def __repr__(self):
         return "<Feed(\"{0}\")>".format(self.url)
@@ -246,7 +247,7 @@ class Feed(db.Model):
 
     def update(self, force=False, tries=0):
         # Don't keep hitting dead links.
-        if not force and not self.active:
+        if (not force) and (not self.active):
             return
 
         # Do a conditional fetch and parse.
@@ -278,8 +279,6 @@ class Feed(db.Model):
         # Get the feed info.
         self.title = tree.feed.get("title", self.title)
         self.link = tree.feed.get("link", self.link)
-        self.etag = tree.get("etag")
-        self.modified = tree.get("modified")
 
         # Something went horribly wrong. Try again?
         if self.title is None:
@@ -287,7 +286,12 @@ class Feed(db.Model):
                 self.update(force=force, tries=tries+1)
             else:
                 print("Too many retries on {0}".format(self.url))
-                return
+
+            return
+
+        # Stop all the downloading.
+        self.etag = tree.get("etag")
+        self.modified = tree.get("modified")
 
         # Loop over the entries.
         for e in tree.entries:

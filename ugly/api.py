@@ -69,7 +69,7 @@ def subscribe():
         feed = Feed(url)
 
         # Update the feed immediately to get the title, etc.
-        feed.update()
+        feed.update(force=True)
 
     # Subscribe the current user.
     current_user.feeds.append(feed)

@@ -8,19 +8,26 @@
 </head>
 <body>
     <div class="container">
-
-        {% if error %}
-        <div id="error">
-            <strong>Error:</strong> {{ error|safe }}
-        </div>
-        {% endif %}
-
-        {% block content %}{% endblock %}
-
+        {% block content -%}{%- endblock %}
         <div class="footer">
             Built with ♥ by <a href="http://dan.iel.fm">Dan Foreman-Mackey</a>.
         </div>
-
     </div>
+{% block scripts -%}{%- endblock %}
+{% if config['GAUGES_ID'] -%}
+<script type="text/javascript">
+  var _gauges = _gauges || [];
+  (function() {
+    var t   = document.createElement('script');
+    t.type  = 'text/javascript';
+    t.async = true;
+    t.id    = 'gauges-tracker';
+    t.setAttribute('data-site-id', '{{ config['GAUGES_ID'] }}');
+    t.src = '//secure.gaug.es/track.js';
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(t, s);
+  })();
+</script>
+{%- endif %}
 </body>
 </html>
