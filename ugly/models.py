@@ -7,6 +7,7 @@ import re
 import os
 import time
 import flask
+import logging
 import imaplib
 import requests
 import feedparser
@@ -149,8 +150,9 @@ class User(db.Model):
         except AssertionError:
             raise RuntimeError("Couldn't authenticate.")
 
+        count = 0
         for feed in self.feeds:
-            self.deliver_entries_for_feed(feed, connection=connection)
+            count += self.deliver_entries_for_feed(feed, connection=connection)
 
         try:
             connection.close()
@@ -158,13 +160,17 @@ class User(db.Model):
             pass
         connection.logout()
 
+        if count == 0:
+            logging.info("No emails to deliver for: {0}"
+                         .format(self.get_email()))
+
     def deliver_entries_for_feed(self, feed, connection):
         # Find the entries that are waiting to be delivered and return if
         # there are none.
         entries = db.session.query(Entry).filter(Entry.feed == feed) \
             .filter(~Entry.users.contains(self)).all()
         if not len(entries):
-            return
+            return 0
 
         # Try and create the labels.
         base = flask.current_app.config["BASE_MAILBOX"]
@@ -215,6 +221,8 @@ class User(db.Model):
         db.session.add(self)
         db.session.commit()
 
+        return len(entries)
+
 
 class Feed(db.Model):
 
@@ -248,6 +256,7 @@ class Feed(db.Model):
     def update(self, force=False, tries=0):
         # Don't keep hitting dead links.
         if (not force) and (not self.active):
+            logging.info("Skipped dead link at: {0}".format(self.url))
             return
 
         # Do a conditional fetch and parse.
@@ -259,20 +268,25 @@ class Feed(db.Model):
 
         # Something went horribly wrong.
         if status is None:
-            print("No status attribute.")
-            print(tree)
+            logging.warn("No status attribute in returned tree object for"
+                         "url: {0}".format(self.url))
             return
 
         # Return if nothing has changed.
         elif status == 304:
+            logging.info("No changes at: {0}".format(self.url))
             return
 
         # Permanent redirect.
         elif status == 301:
-            self.url = tree.get("href", self.url)
+            new_url = tree.get("href", self.url)
+            logging.info("Permanent redirect of: {0} -> {1}"
+                         .format(self.url, new_url))
+            self.url = new_url
 
         # The feed is gone forever.
         elif status == 410:
+            logging.info("Dead link at: {0}".format(self.url))
             self.active = False
             return
 
@@ -282,11 +296,11 @@ class Feed(db.Model):
 
         # Something went horribly wrong. Try again?
         if self.title is None:
+            logging.warn("No title attribute at: {0}".format(self.url))
             if tries < 10:
                 self.update(force=force, tries=tries+1)
             else:
-                print("Too many retries on {0}".format(self.url))
-
+                logging.error("Too many retries on {0}".format(self.url))
             return
 
         # Stop all the downloading.

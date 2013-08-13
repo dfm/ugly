@@ -2,6 +2,7 @@
 
   "use strict";
 
+  function hide_error () { $("#error").hide(); }
   function display_error (msg) {
     if (typeof msg !== "undefined" && msg != "")
       $("#error-message").html(msg);
@@ -14,6 +15,10 @@
     initialize: function () {
       this.feeds_view = new FeedsView({model: new Feeds(), el: "#feeds-view"});
       this.feeds_view.model.fetch();
+      this.feeds_view.render();
+
+      this.add_feed_view = new AddFeedView({el: "#new-feed-block"});
+      this.add_feed_view.app = this;
     },
     subscribe: function (url) {
       var this_ = this;
@@ -38,6 +43,7 @@
   var Feed = Backbone.Model.extend({
     unsubscribe: function () {
       var this_ = this;
+      hide_error();
       $.ajax({
         url: "/api/unsubscribe/"+this_.id,
         type: "POST",
@@ -89,6 +95,19 @@
     render: function () {
       this.$el.html(this.template(this.model.attributes));
       return this;
+    }
+  });
+  var AddFeedView = Backbone.View.extend({
+    events: {
+      "submit #add-feed-form": "add_new_feed"
+    },
+    add_new_feed: function () {
+      var el = this.$("#add-url"),
+          url = el.val();
+      hide_error();
+      el.val("");
+      this.app.subscribe(url);
+      return false;
     }
   });
 
