@@ -34,7 +34,7 @@ Your subscriptions:
 <ul>
 {% for feed in g.user.feeds -%}
     <li>
-        {{ feed.url }}
+        <a href="{{ feed.link }}">{{ feed.title }}</a>
         <a href="?remove={{ feed.url }}" class="unsubscribe">Unsubscribe</a>
     </li>
 {% endfor %}

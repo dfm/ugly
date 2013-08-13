@@ -94,7 +94,7 @@ class User(db.Model):
         self.refresh_token = refresh_token
 
         self.joined = datetime.utcnow()
-        self.apitoken = self.generate_token()
+        self.api_token = self.generate_token()
         self.admin = False
         self.active = True
 
@@ -225,6 +225,7 @@ class Feed(db.Model):
     url = Column(String)
     link = Column(String)
     title = Column(String)
+    active = Column(Boolean, default=True)
 
     etag = Column(String)
     modified = Column(String)
@@ -235,20 +236,58 @@ class Feed(db.Model):
     def __repr__(self):
         return "<Feed(\"{0}\")>".format(self.url)
 
-    def update(self):
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "url": self.url,
+            "link": self.link,
+            "title": self.title,
+        }
+
+    def update(self, force=False, tries=0):
+        # Don't keep hitting dead links.
+        if not force and not self.active:
+            return
+
         # Do a conditional fetch and parse.
         tree = feedparser.parse(self.url, etag=self.etag,
                                 modified=self.modified)
 
+        # Deal with the response code.
+        status = tree.get("status")
+
+        # Something went horribly wrong.
+        if status is None:
+            print("No status attribute.")
+            print(tree)
+            return
+
         # Return if nothing has changed.
-        if tree.status == 304:
+        elif status == 304:
+            return
+
+        # Permanent redirect.
+        elif status == 301:
+            self.url = tree.get("href", self.url)
+
+        # The feed is gone forever.
+        elif status == 410:
+            self.active = False
             return
 
         # Get the feed info.
-        self.title = tree.feed.get("title")
-        self.link = tree.feed.get("link")
+        self.title = tree.feed.get("title", self.title)
+        self.link = tree.feed.get("link", self.link)
         self.etag = tree.get("etag")
         self.modified = tree.get("modified")
+
+        # Something went horribly wrong. Try again?
+        if self.title is None:
+            if tries < 10:
+                self.update(force=force, tries=tries+1)
+            else:
+                print("Too many retries on {0}".format(self.url))
+                return
 
         # Loop over the entries.
         for e in tree.entries:
@@ -261,9 +300,6 @@ class Feed(db.Model):
             # Create a new entry and save.
             entry = Entry(self, e)
             self.entries.append(entry)
-
-        db.session.add(self)
-        db.session.commit()
 
 
 class Entry(db.Model):
