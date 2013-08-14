@@ -5,7 +5,7 @@
 <p style="color:#666;font-size:12px;"><i>From <a href="{{entry.feed.link}}">{{entry.feed.title|safe}}</a></i></p>
 </td></tr>
 <tr><td style="line-height:1.4;padding:20px 0;">
-{{entry.body|safe}}
+{{entry.get_body()|safe}}
 </tr></td>
 <tr><td style="font-size:12px;color:#666;border-top:2px solid #efefea;padding-top:8px;">
 This email was sent by the

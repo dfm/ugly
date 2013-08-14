@@ -40,7 +40,7 @@ def settings():
 @frontend.route("/message")
 @login_required
 def message():
-    e = Entry.query.all()[51]
+    e = Entry.query.filter_by(feed_id=3).first()
     try:
         return flask.render_template("message.html", entry=e)
     except:

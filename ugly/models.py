@@ -12,6 +12,7 @@ import imaplib
 import requests
 import feedparser
 from hashlib import sha1
+from bs4 import BeautifulSoup
 from datetime import datetime
 from SimpleAES import SimpleAES
 from email.mime.text import MIMEText
@@ -355,3 +356,9 @@ class Entry(db.Model):
 
     def __repr__(self):
         return "<Entry({1}, \"{0}\")>".format(self.ref, repr(self.feed))
+
+    def get_body(self):
+        soup = BeautifulSoup(self.body)
+        for img in soup.find_all("img"):
+            img["style"] = "max-width:100%;"
+        return str(soup)
