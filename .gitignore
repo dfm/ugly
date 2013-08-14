@@ -11,3 +11,4 @@ data
 local.py
 email_test.py
 uglyd.*
+setup_db_context.py

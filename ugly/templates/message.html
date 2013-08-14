@@ -1,11 +1,17 @@
+<table style="width: 600px;" cellspacing="0" cellpadding="0">
+<tbody style="font-size:16px;color:#222;font-family:'Helvetica Neue',Helvetica,sans-serif;">
+<tr><td>
 <h2><a href="{{entry.link}}">{{entry.title|safe}}</a></h2>
-<p><i>From <a href="{{feed.link}}">{{feed.title|safe}}</a></i></p>
-<p><br></p>
+<p style="color:#666;font-size:12px;"><i>From <a href="{{entry.feed.link}}">{{entry.feed.title|safe}}</a></i></p>
+</td></tr>
+<tr><td style="line-height:1.4;padding:20px 0;">
 {{entry.body|safe}}
-<p><br><br></p>
-<p style="border-top: 2px solid #efefea;">
-<small style="color: #666;">This email was sent by the
+</tr></td>
+<tr><td style="font-size:12px;color:#666;border-top:2px solid #efefea;padding-top:8px;">
+This email was sent by the
 <a href="http://reader.dfm.io">Ugly Reader</a>.
-Unsubscribe or edit your settings
+Join, unsubscribe or edit your settings
 <a href="http://reader.dfm.io/settings">here</a>.
-</small></p>
+</tr></td>
+</tbody>
+</table>

@@ -6,6 +6,8 @@ __all__ = ["frontend"]
 import flask
 from flask.ext.login import login_required
 
+from .models import Entry
+
 frontend = flask.Blueprint("frontend", __name__)
 
 
@@ -33,3 +35,14 @@ def privacy():
 def settings():
     error = None
     return flask.render_template("settings.html", error=error)
+
+
+@frontend.route("/message")
+@login_required
+def message():
+    e = Entry.query.all()[51]
+    try:
+        return flask.render_template("message.html", entry=e)
+    except:
+        import traceback
+        return traceback.format_exc()

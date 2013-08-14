@@ -10,6 +10,7 @@ import time
 import logging
 import traceback
 from ugly import create_app
+from ugly.database import db
 from ugly.models import User, Feed
 
 largs = dict(level=logging.INFO,
@@ -33,6 +34,8 @@ def update_feeds():
         except:
             logging.error("uglyd failed to update feed: {0}".format(feed.url))
             logging.error(traceback.format_exc())
+        else:
+            db.session.commit()
 
 
 def send_emails():
@@ -43,6 +46,8 @@ def send_emails():
             logging.error("uglyd failed to send emails to: {0}"
                           .format(user.get_email()))
             logging.error(traceback.format_exc())
+        else:
+            db.session.commit()
 
 
 if __name__ == "__main__":
