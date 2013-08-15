@@ -254,6 +254,21 @@ class Feed(db.Model):
             "title": self.title,
         }
 
+    def update_info(self):
+        tree = feedparser.parse(self.url)
+        status = tree.get("status")
+        if status == 410:
+            logging.info("Dead link at: {0}".format(self.url))
+            self.active = False
+            return
+
+        # Get the feed info.
+        self.active = True
+        self.title = tree.feed.get("title", self.title)
+        self.link = tree.feed.get("link", self.link)
+
+        assert self.title is not None
+
     def update(self, force=False, tries=0):
         # Don't keep hitting dead links.
         if (not force) and (not self.active):
@@ -292,6 +307,7 @@ class Feed(db.Model):
             return
 
         # Get the feed info.
+        self.active = True
         self.title = tree.feed.get("title", self.title)
         self.link = tree.feed.get("link", self.link)
 
@@ -361,4 +377,4 @@ class Entry(db.Model):
         soup = BeautifulSoup(self.body)
         for img in soup.find_all("img"):
             img["style"] = "max-width:100%;"
-        return str(soup)
+        return soup.decode("utf-8")

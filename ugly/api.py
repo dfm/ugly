@@ -49,7 +49,9 @@ def subscribe():
     # Try to find a feed below the requested resource.
     url = feedfinder.feed(add_url)
     if url is None:
-        return flask.jsonify(message="Invalid feed URL."), 400
+        return flask.jsonify(message="The robot can't find a feed at that "
+                             "URL. Could you help it with a more specific "
+                             "link?"), 400
 
     # See if the user is already subscribed to a feed at that URL.
     feed = db.session.query(Feed).join(User.feeds) \
@@ -69,7 +71,7 @@ def subscribe():
         feed = Feed(url)
 
         # Update the feed immediately to get the title, etc.
-        feed.update(force=True)
+        feed.update_info()
 
     # Subscribe the current user.
     current_user.feeds.append(feed)
