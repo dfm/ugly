@@ -18,12 +18,10 @@ sorted in nested labels.
 </p>
 
 <p>
-To get started, all you have to do is login using your Gmail account below
+To get started, all you have to do is login using your Gmail account
 and add some RSS feeds.
 </p>
-
-<div class="login-block">
-    <a href="{{ url_for('login.index') }}" class="btn">Login using Gmail</a>
-</div>
-
+{% include "login_block.html" %}
+<hr>
+{% include "about_content.html" %}
 {% endblock %}

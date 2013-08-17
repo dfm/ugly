@@ -109,6 +109,16 @@ a {
 
     .right {
         float: right;
+        text-align: right;
+    }
+
+    &:before,
+    &:after {
+        content: " ";
+        display: table;
+    }
+    &:after {
+        clear: both;
     }
 }
 
@@ -142,8 +152,36 @@ a {
     }
 }
 
+hr {
+    border: 0;
+    border-top: 2px solid #efefea;
+    margin: 40px 0;
+}
+
+h2 {
+    font-size: 28px;
+    text-align: center;
+    font-weight: normal;
+    font-style: italic;
+}
+
 p {
     line-height: 1.7;
+}
+
+// FAQ.
+ol {
+    font-size: 20px;
+    font-weight: bold;
+
+    li {
+        margin-bottom: 25px;
+    }
+
+    p {
+        font-size: 16px;
+        font-weight: normal;
+    }
 }
 
 #new-feed-block {

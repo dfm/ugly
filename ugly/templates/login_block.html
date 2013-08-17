@@ -1,0 +1,5 @@
+{% if not current_user.is_authenticated() -%}
+<div class="login-block">
+    <a href="{{ url_for('login.index') }}" class="btn">Login securely using Gmail</a>
+</div>
+{%- endif %}

@@ -1,0 +1,96 @@
+<h2 id="about">About Ugly Reader</h2>
+
+<p>
+When <a href="https://www.google.com/reader/about/">Google Reader</a> shut
+down on July 1, 2013, it was pretty frustrating for a lot of us. There are
+already <a href="http://alternativeto.net/software/google-reader/">a whole
+lot of replacement options</a> out there but none of them seemed quite
+satisfying to <a href="http://dan.iel.fm">me</a> so I decided come up with my
+own solution [insert required <a href="http://xkcd.com/927">XKCD reference</a>
+here]. After a few attempts, I settled on using an
+<a href="https://ifttt.com/">IFTTT</a> recipe to email myself and setting up
+a complicated set of filters in my Gmail account. This was pretty good but it
+still took a pretty long time and a bunch of steps to add a new feed and that
+just wasn't going to cut it! That's why I made Ugly Reader.
+</p>
+
+<p>
+When you sign up to use Ugly Reader, you grant the servers access to your
+Gmail account (<a href="#faq">more details here</a>) so that when the feeds
+you follow are updated, you get the articles directly in your email client.
+Instead of emailing them to you and filling up your inbox, Ugly Reader filters
+the messages so that they end up in a folder called <i>[Ugly Reader]/Feed
+  Title</i> (with <i>Feed Title</i> replaced by the actual title of the feed,
+obviously). That's it. There aren't any social features, there aren't any CSS
+animations, and there certainly aren't any ads.
+</p>
+
+<p>
+Ugly Reader is an open source project
+<a href="https://github.com/dfm/ugly">being developed on GitHub</a> and
+licensed under <a href="https://github.com/dfm/ugly/blob/master/LICENSE">the
+MIT license</a>. Feel free to use this version or deploy your own copy on your
+own servers. If you make any improvements, please consider pushing them back
+into master code base by submitting a pull request so that we can all benefit
+from your hard work!
+</p>
+
+<p>
+<a href="https://github.com/dfm/ugly/issues">Let me know</a> if you run into
+problems or have any questions.
+</p>
+
+{% include "login_block.html" %}
+
+<hr>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+
+<ol>
+
+<li>What information does Ugly Reader collect about me?
+<p>
+Only your email address and it is stored (encrypted) in a secure database.
+This will <i>never</i> be looked at, sold or given to anyone and it will only
+ever be used for identification when you log in.
+Ugly Reader <strong>never downloads or looks at <i>any</i> email
+messages</strong> in your Gmail account.
+</p></li>
+
+<li>How does the secure Gmail login work? Does Ugly Reader see my password?
+<p>
+Ugly Reader uses an industry standard technology called
+<a href="http://en.wikipedia.org/wiki/OAuth">OAuth</a> to authenticate users.
+The email address and password that you enter are never visible or given to
+Ugly Reader since the login happens entirely on Google's side. After you
+grant email access privileges to Ugly Reader, Google returns a code that is
+used to upload messages and sort them out of your inbox. You can decide to
+revoke access at any time by
+<a href="https://accounts.google.com/IssuedAuthSubTokens">clicking here</a>.
+If you decide to do this, Ugly Reader will no longer have access to you Gmail
+account so it will stop delivering updates until the next time you login.
+</p></li>
+
+<li>If I grant Ugly Reader access to my account, what sort of control does
+Ugly Reader get?
+<p>
+By granting Ugly Reader access to your email account, you are giving it
+complete control over all of your emails. This is the same level of access
+as you have provided to the email client on your computer or your phone.
+Unfortunately, there is no way to request only partial access to your account.
+That being said, Ugly Reader only ever writes emails to your mailbox and
+files them under specific headers. As mentioned above, Ugly Reader
+<strong>never downloads or looks at <i>any</i> of your email</strong>.
+You can revoke access at any time by
+<a href="https://accounts.google.com/IssuedAuthSubTokens">clicking here</a>.
+</p></li>
+
+<li>Is the name <a href="http://simpsonswiki.com/wiki/The_Ugly_Reader">a
+reference to the Simpsons</a>?
+<p>
+Nope. You're welcome to interpret it that way though.
+</p></li>
+
+</ol>
+
+{% include "login_block.html" %}

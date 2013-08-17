@@ -1,16 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="header">
-    <h1>About Ugly Reader</h1>
+    <h1>Ugly Reader</h1>
+    <h2>The <strong>ugliest</strong> Google Reader replacement on the market.</h2>
 </div>
-<p>
-About.
-</p>
 
-{% if not current_user.is_authenticated() -%}
-<div class="login-block">
-    <a href="{{ url_for('login.index') }}" class="btn">Login using Gmail</a>
-</div>
-{%- endif %}
+{% include "about_content.html" %}
 
 {% endblock %}

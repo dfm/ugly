@@ -1,6 +1,5 @@
 # RSS
 feedparser==5.1.3
--e git+https://github.com/aaronsw/html2text.git#egg=html2text-dev
 beautifulsoup4==4.3.0
 
 # Database
