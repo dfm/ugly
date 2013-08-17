@@ -1,8 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
-<div id="error">
+
+<div id="error" class="message">
     <button type="button" class="close" data-dismiss="#error">&times;</button>
     <strong>Error:</strong> <span id="error-message"></span>
+</div>
+
+<div id="status" class="message">
+    <button type="button" class="close" data-dismiss="#status">&times;</button>
+    <span id="status-message">Some status.</span>
 </div>
 
 <div class="header">
@@ -31,7 +37,7 @@ a message in your Gmail account under the label <strong>[Ugly Reader]/Feed
 Title</strong> with the actual title of the feed.
 </p>
 
-<div id="feeds-view"></div>
+<div id="feeds-view">Loading your subscriptions…</div>
 
 <div id="new-feed-block">
     <form id="add-feed-form">

@@ -59,7 +59,7 @@ def subscribe():
         .filter(Feed.url == url).first()
     if feed is not None:
         return flask.jsonify(
-            message="You've already subscribed to that feed.",
+            message="You've already subscribed to {0}.".format(feed.title),
             feed=feed.to_dict(),
         )
 
@@ -78,7 +78,7 @@ def subscribe():
     db.session.commit()
 
     return flask.jsonify(
-        message="Successfully subscribed.",
+        message="Successfully subscribed to {0}.".format(feed.title),
         feed=feed.to_dict(),
     )
 
@@ -96,7 +96,9 @@ def unsubscribe(feedid):
         return flask.jsonify(message="Invalid feed ID."), 400
 
     # Unsubscribe the user.
+    title = feed.title
     current_user.feeds.remove(feed)
     db.session.commit()
 
-    return flask.jsonify(message="Successfully unsubscribed.")
+    return flask.jsonify(message="Successfully unsubscribed from {0}."
+                         .format(title))

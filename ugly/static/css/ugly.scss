@@ -22,10 +22,9 @@ a {
     margin: 0 auto;
 }
 
-#error {
+.message {
     display: none;
-    background: #efcdcd;
-    border-bottom: 1px solid #ad2222;
+    border-bottom: 1px solid #222;
     padding: 8px 16px;
     margin: 0;
     font-size: 14px;
@@ -45,6 +44,16 @@ a {
         border: 0;
         -webkit-appearance: none;
     }
+}
+
+#error {
+    background: #efcdcd;
+    border-color: #ad2222;
+}
+
+#status {
+    background: #fcf8e3;
+    border-color: #c09853;
 }
 
 .header {
@@ -124,6 +133,12 @@ a {
         text-decoration: none;
         background: #5050da;
         border-color: #5050da;
+    }
+
+    &.disabled:hover {
+        text-decoration: none;
+        background: #6666ee;
+        border-color: #6666ee;
     }
 }
 

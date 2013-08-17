@@ -2,13 +2,19 @@
 
   "use strict";
 
-  function hide_error () { $("#error").hide(); }
+  function hide_error () { $(".message").hide(); }
   function display_error (msg) {
+    hide_error();
     if (typeof msg !== "undefined" && msg != "")
       $("#error-message").html(msg);
     else
       $("#error-message").text("Something went wrong.");
     $("#error").show();
+  }
+  function display_status (msg) {
+    hide_error();
+    $("#status-message").html(msg);
+    $("#status").show();
   }
 
   var UglyReader = Backbone.Router.extend({
@@ -22,16 +28,21 @@
     },
     subscribe: function (url) {
       var this_ = this;
+      display_status("Working…");
       $.ajax({
         url: "/api/subscribe",
         type: "POST",
         dataType: "json",
         data: {url: url},
         success: function (data) {
+          display_status(data.message);
           this_.feeds_view.model.add(data.feed);
         },
         error: function (xhr, errorType, error) {
           display_error(eval("("+xhr.response+")").message);
+        },
+        complete: function () {
+          this_.add_feed_view.enable();
         }
       });
     }
@@ -43,12 +54,15 @@
   var Feed = Backbone.Model.extend({
     unsubscribe: function () {
       var this_ = this;
-      hide_error();
+      display_status("Working…");
       $.ajax({
         url: "/api/unsubscribe/"+this_.id,
         type: "POST",
         dataType: "json",
-        success: function () { this_.collection.remove(this_); },
+        success: function (data) {
+          display_status(data.message);
+          this_.collection.remove(this_);
+        },
         error: function (xhr, errorType, error) {
           display_error(eval("("+xhr.response+")").message);
         }
@@ -102,12 +116,19 @@
       "submit #add-feed-form": "add_new_feed"
     },
     add_new_feed: function () {
-      var el = this.$("#add-url"),
-          url = el.val();
-      hide_error();
-      el.val("");
-      this.app.subscribe(url);
+      this.disable();
+      this.app.subscribe(this.$("#add-url").val());
       return false;
+    },
+    disable: function () {
+      this.$("#add-url").attr("disabled", true);
+      this.$("button").attr("disabled", true)
+                      .addClass("disabled");
+    },
+    enable: function () {
+      this.$("input").val("").attr("disabled", null);
+      this.$("button").attr("disabled", null)
+                      .removeClass("disabled");
     }
   });
 
