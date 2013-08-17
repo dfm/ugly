@@ -4,6 +4,7 @@
 __all__ = ["api"]
 
 import flask
+import requests
 import feedfinder
 from functools import wraps
 from flask.ext.login import current_user
@@ -49,9 +50,16 @@ def subscribe():
     # Try to find a feed below the requested resource.
     url = feedfinder.feed(add_url)
     if url is None:
-        return flask.jsonify(message="The robot can't find a feed at that "
-                             "URL. Could you help it with a more specific "
-                             "link?"), 400
+        # One last try.
+        r = requests.get(add_url)
+        data = r.text
+        if (r.status_code != requests.code.ok or data.count("<html") > 0 or
+            (data.count("<rss") + data.count("<rdf") + data.count("<feed")
+             == 0)):
+            return flask.jsonify(message="The robot can't find a feed at that "
+                                 "URL. Could you help it with a more specific "
+                                 "link?"), 400
+        url = add_url
 
     # See if the user is already subscribed to a feed at that URL.
     feed = db.session.query(Feed).join(User.feeds) \
