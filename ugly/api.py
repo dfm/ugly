@@ -15,11 +15,26 @@ from .models import User, Feed
 api = flask.Blueprint("api", __name__)
 
 
+def _get_user():
+    token = flask.request.values.get("token")
+    if token is not None:
+        return User.query.filter_by(api_token=token).first()
+    return current_user
+
+
 def private_view(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
-        if not current_user.is_authenticated():
+        user = _get_user()
+
+        # Check for invalid API tokens.
+        if user is None:
+            return flask.jsonify(message="Invalid API token."), 403
+
+        # Check to make sure that the current user is valid.
+        if not user.is_authenticated():
             return flask.abort(404)
+
         return func(*args, **kwargs)
     return decorated_view
 
@@ -32,7 +47,7 @@ def index():
 @api.route("/feeds")
 @private_view
 def feeds():
-    feeds = current_user.feeds
+    feeds = _get_user().feeds
     return flask.jsonify(
         count=len(feeds),
         feeds=[feed.to_dict() for feed in feeds],
@@ -62,8 +77,9 @@ def subscribe():
         url = add_url
 
     # See if the user is already subscribed to a feed at that URL.
+    user = _get_user()
     feed = db.session.query(Feed).join(User.feeds) \
-        .filter(User.id == current_user.id) \
+        .filter(User.id == user.id) \
         .filter(Feed.url == url).first()
     if feed is not None:
         return flask.jsonify(
@@ -82,7 +98,7 @@ def subscribe():
         feed.update_info()
 
     # Subscribe the current user.
-    current_user.feeds.append(feed)
+    user.feeds.append(feed)
     db.session.commit()
 
     return flask.jsonify(
@@ -94,9 +110,11 @@ def subscribe():
 @api.route("/unsubscribe/<int:feedid>", methods=["GET", "POST"])
 @private_view
 def unsubscribe(feedid):
+    user = _get_user()
+
     # Find the feed that the user wants to unsubscribe from.
     feed = db.session.query(Feed).join(User.feeds) \
-        .filter(User.id == current_user.id) \
+        .filter(User.id == user.id) \
         .filter(Feed.id == feedid).first()
 
     # If the user isn't subscribed, return a failure.
@@ -105,7 +123,7 @@ def unsubscribe(feedid):
 
     # Unsubscribe the user.
     title = feed.title
-    current_user.feeds.remove(feed)
+    user.feeds.remove(feed)
     db.session.commit()
 
     return flask.jsonify(message="Successfully unsubscribed from {0}."
