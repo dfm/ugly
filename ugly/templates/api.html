@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header">
+    <h1>Ugly Reader API</h1>
+</div>
+
+<p>
+Ugly Reader offers limit programmatic access to the service through this API.
+To interact with the API, you'll need to include your API key in every
+request as a URL parameter: <code>?token=API_KEY</code>.
+{% if not current_user.is_authenticated() -%}
+<a href="{{ url_for('login.index') }}">Login</a> to see your API key.
+{% endif %}
+</p>
+
+{% if current_user.is_authenticated() -%}
+<div class="api-key-block">
+    Your API key is: <a href="javascript:show_token();" id="api-key-toggle">click to show</a>
+    <span id="api-key" style="display: none;"><code>{{ current_user.api_token }}</code>
+    <a href="javascript:hide_token();">(hide)</a>
+    </span><br>
+    <a href="{{ url_for('.new_key') }}">Generate a new key.</a>
+</div>
+{% endif %}
+
+<p>
+At this point, the API offers three end points: <code>/feeds</code>,
+<code>/subscribe</code>, and <code>/unsubscribe</code>. These should each do
+more or less what you'd expect but the specific usage is described below.
+Each endpoint accepts <code>GET</code> and <code>POST</code> requests and
+returns a JSON response. You'll get a <code>403</code> if you give an
+invalid token and a <code>400</code> if something goes wrong. The base
+URL for all of the API endpoints is
+<code>{{ url_for('.index', _external=True) }}</code>.
+</p>
+
+<hr>
+<div class="api-endpoint">
+    <pre class="api-url">GET /feeds</pre>
+    <div class="api-desc">
+        You can use this endpoint to get a list of all of the feeds to which
+        you have subscribed. It doesn't take any arguments—besides the
+        required <code>token</code> parameter containing your API key.
+    </div>
+    <strong>Sample Response</strong>
+    <pre class="api-resp">
+{
+    "count": 1,
+    "feeds": [
+        {
+            "id": 1,
+            "link": "http://xkcd.com/",
+            "title": "xkcd.com",
+            "url": "http://xkcd.com/atom.xml"
+        }
+    ]
+}</pre>
+</div>
+
+<hr>
+<div class="api-endpoint">
+    <pre class="api-url">GET /subscribe
+POST /subscribe</pre>
+    <div class="api-desc">
+        This endpoint lets you programmatically subscribe to a feed. This has
+        one required parameter <code>url</code> that should be the URL of the
+        feed. The server will attempt to find the associated feed if the
+        provided URL doesn't return a valid feed. In other words, a call to
+        <code>/subscribe?url=xkcd.com</code> will successfully subscribe you
+        to the feed at <code>http://xkcd.com/atom.xml</code> and return the
+        following response.
+    </div>
+    <strong>Sample Response</strong>
+    <pre class="api-resp">
+{
+    "feed": {
+        "id": 1,
+        "link": "http://xkcd.com/",
+        "title": "xkcd.com",
+        "url": "http://xkcd.com/atom.xml"
+    },
+    "message": "Successfully subscribed to xkcd.com."
+}</pre>
+</div>
+
+<hr>
+<div class="api-endpoint">
+    <pre class="api-url">GET /unsubscribe/&lt;id&gt;
+POST /unsubscribe/&lt;id&gt;</pre>
+    <div class="api-desc">
+        This endpoint allows you to unsubscribe from a feed. The value
+        <code>&lt;id&gt;</code> in the endpoint URL above should be a valid
+        feed ID in your subscription list (as returned by the
+        <code>/feeds</code> endpoint above).
+    </div>
+    <strong>Sample Response</strong>
+    <pre class="api-resp">
+{
+    "message": "Successfully unsubscribed from xkcd.com."
+}</pre>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/zepto-min.js') }}"></script>
+<script>
+function show_token () {
+    $("#api-key-toggle").hide();
+    $("#api-key").show();
+    return false;
+}
+function hide_token () {
+    $("#api-key").hide();
+    $("#api-key-toggle").show();
+    return false;
+}
+</script>
+{% endblock %}

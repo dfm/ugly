@@ -120,7 +120,7 @@ class User(db.Model):
         return False
 
     def generate_token(self):
-        return sha1(os.urandom(8) + self.email + os.urandom(8)).hexdigest()
+        return sha1(os.urandom(8)+self.get_email()+os.urandom(8)).hexdigest()
 
     def get_oauth2_token(self):
         data = {

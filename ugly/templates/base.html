@@ -11,10 +11,11 @@
         {% block content -%}{%- endblock %}
         <div class="footer">
             <ul class="left">
-                <li><a href="{{ url_for('.about') }}">About</a></li>{% if config["CONTACT_URL"] -%}
+                <li><a href="{{ url_for('frontend.about') }}">About</a></li>
+                <li><a href="{{ url_for('api.index') }}">API</a></li>{% if config["CONTACT_URL"] -%}
                 <li><a href="{{ config["CONTACT_URL"] }}">Contact</a></li>
                 {%- endif %}{% if current_user.is_authenticated() -%}
-                <li><a href="{{ url_for('.settings') }}">Settings</a><li><a href="{{ url_for('login.logout') }}">Logout</a></li>
+                <li><a href="{{ url_for('frontend.settings') }}">Settings</a><li><a href="{{ url_for('login.logout') }}">Logout</a></li>
                 {%- endif %}
             </ul>
             <div class="right">

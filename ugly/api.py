@@ -41,7 +41,16 @@ def private_view(func):
 
 @api.route("/")
 def index():
-    return flask.redirect(flask.url_for("frontend.index"))
+    return flask.render_template("api.html")
+
+
+@api.route("/new")
+def new_key():
+    if not current_user.is_authenticated():
+        return flask.abort(404)
+    current_user.api_token = current_user.generate_token()
+    db.session.commit()
+    return flask.redirect(flask.url_for(".index"))
 
 
 @api.route("/feeds")

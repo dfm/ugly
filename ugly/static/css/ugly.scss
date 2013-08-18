@@ -16,6 +16,15 @@ a {
     }
 }
 
+code, pre {
+    font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+    font-size: 90%;
+}
+
+code {
+    padding: 2px 4px;
+}
+
 .container {
     display: block;
     width: 800px;
@@ -209,4 +218,35 @@ ol {
     cursor: pointer;
     font-size: 14px;
     margin-left: 10px;
+}
+
+.api-key-block {
+    background-color: #eee;
+    border: 3px solid #bbb;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.api-endpoint {
+
+    .api-url {
+        display: block;
+        padding: 5px 8px;
+        background-color: #eee;
+        border-top: 3px solid #bbb;
+        font-size: 105%;
+    }
+
+    .api-desc {
+        margin: 0 0 20px;
+    }
+
+    .api-resp {
+        display: block;
+        padding: 8px;
+        font-size: 75%;
+        background: #eee;
+        border: 1px solid #bbb;
+        border-radius: 3px;
+    }
 }
