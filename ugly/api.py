@@ -71,6 +71,13 @@ def subscribe():
     if add_url is None:
         return flask.jsonify(message="You must provide a URL."), 400
 
+    # Check to make sure that the user doesn't have too many subscriptions.
+    user = _get_user()
+    mx = flask.current_app.config.get("MAX_FEEDS", -1)
+    if mx > 0 and len(user.feeds) >= mx:
+        return flask.jsonify(message="You're already subscribed to the "
+                             "maximum number of feeds."), 400
+
     # Try to find a feed below the requested resource.
     url = feedfinder.feed(add_url)
     if url is None:
@@ -86,7 +93,6 @@ def subscribe():
         url = add_url
 
     # See if the user is already subscribed to a feed at that URL.
-    user = _get_user()
     feed = db.session.query(Feed).join(User.feeds) \
         .filter(User.id == user.id) \
         .filter(Feed.url == url).first()

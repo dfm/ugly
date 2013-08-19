@@ -7,6 +7,7 @@ SECRET_KEY = "development key"
 ADMIN_EMAIL = "Ugly Reader <ugly@dfm.io>"
 BASE_MAILBOX = "[Ugly Reader]"
 AES_KEY = b"test AES key... change this in production"
+MAX_FEEDS = 100
 
 # Database stuff.
 SQLALCHEMY_DATABASE_URI = "postgresql://localhost/ugly"
