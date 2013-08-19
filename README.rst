@@ -1,7 +1,7 @@
 Ugly Reader
 ===========
 
-*The ugliest Google Reader reaplacement on the market.*
+*The ugliest Google Reader replacement on the market.*
 
 **Take a look at the live demo at: https://reader.dfm.io**
 
