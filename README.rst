@@ -3,9 +3,8 @@ Ugly Reader
 
 *The ugliest Google Reader replacement on the market.*
 
-**Take a look at the live demo at: https://reader.dfm.io**
-
-This is the Python source code for this app and it is licensed under the MIT license.
+Take a look at `the live demo <https://reader.dfm.io>`_ or feel free to run your own
+version locally.
 
 Installation & Setup
 --------------------
