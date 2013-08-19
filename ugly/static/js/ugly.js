@@ -56,8 +56,8 @@
       var this_ = this;
       display_status("Working…");
       $.ajax({
-        url: "/api/unsubscribe/"+this_.id,
-        type: "POST",
+        url: "/api/feed/"+this_.id,
+        type: "DELETE",
         dataType: "json",
         success: function (data) {
           display_status(data.message);

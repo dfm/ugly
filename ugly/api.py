@@ -63,6 +63,23 @@ def feeds():
     )
 
 
+@api.route("/feed/<int:feedid>", methods=["GET"])
+@private_view
+def feed_info(feedid):
+    user = _get_user()
+
+    # Find the feed.
+    feed = db.session.query(Feed).join(User.feeds) \
+        .filter(User.id == user.id) \
+        .filter(Feed.id == feedid).first()
+
+    # If the user isn't subscribed, return a failure.
+    if feed is None:
+        return flask.jsonify(message="Invalid feed ID."), 400
+
+    return flask.jsonify(**(feed.to_dict()))
+
+
 @api.route("/subscribe", methods=["GET", "POST"])
 @private_view
 def subscribe():
@@ -122,7 +139,7 @@ def subscribe():
     )
 
 
-@api.route("/unsubscribe/<int:feedid>", methods=["GET", "POST"])
+@api.route("/feed/<int:feedid>", methods=["DELETE"])
 @private_view
 def unsubscribe(feedid):
     user = _get_user()

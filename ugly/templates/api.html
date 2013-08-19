@@ -24,13 +24,11 @@ request as a URL parameter: <code>?token=API_KEY</code>.
 {% endif %}
 
 <p>
-At this point, the API offers three end points: <code>/feeds</code>,
-<code>/subscribe</code>, and <code>/unsubscribe</code>. These should each do
-more or less what you'd expect but the specific usage is described below.
-Each endpoint accepts <code>GET</code> and <code>POST</code> requests and
-returns a JSON response. You'll get a <code>403</code> if you give an
-invalid token and a <code>400</code> if something goes wrong. The base
-URL for all of the API endpoints is
+At this point, the API offers three endpoints: <code>/feeds</code>,
+<code>/feed</code>, and <code>/subscribe</code>. Each successful request
+returns <code>200</code> and a JSON object. You'll get a <code>403</code> if
+you give an invalid token and a <code>400</code> if something else goes wrong.
+The base URL for all of the API endpoints is
 <code>{{ url_for('.index', _external=True) }}</code>.
 </p>
 
@@ -59,6 +57,38 @@ URL for all of the API endpoints is
 
 <hr>
 <div class="api-endpoint">
+    <pre class="api-url">GET /feed/&lt;id&gt;</pre>
+    <div class="api-desc">
+        This endpoint returns the information about a particular field.
+    </div>
+    <strong>Sample Response</strong>
+    <pre class="api-resp">
+{
+    "id": 1,
+    "link": "http://xkcd.com/",
+    "title": "xkcd.com",
+    "url": "http://xkcd.com/atom.xml"
+}</pre>
+</div>
+
+<hr>
+<div class="api-endpoint">
+    <pre class="api-url">DELETE /feed/&lt;id&gt;</pre>
+    <div class="api-desc">
+        This endpoint allows you to unsubscribe from a feed. The value
+        <code>&lt;id&gt;</code> in the endpoint URL above should be a valid
+        feed ID in your subscription list (as returned by the
+        <code>/feeds</code> endpoint above).
+    </div>
+    <strong>Sample Response</strong>
+    <pre class="api-resp">
+{
+    "message": "Successfully unsubscribed from xkcd.com."
+}</pre>
+</div>
+
+<hr>
+<div class="api-endpoint">
     <pre class="api-url">GET /subscribe
 POST /subscribe</pre>
     <div class="api-desc">
@@ -80,23 +110,6 @@ POST /subscribe</pre>
         "url": "http://xkcd.com/atom.xml"
     },
     "message": "Successfully subscribed to xkcd.com."
-}</pre>
-</div>
-
-<hr>
-<div class="api-endpoint">
-    <pre class="api-url">GET /unsubscribe/&lt;id&gt;
-POST /unsubscribe/&lt;id&gt;</pre>
-    <div class="api-desc">
-        This endpoint allows you to unsubscribe from a feed. The value
-        <code>&lt;id&gt;</code> in the endpoint URL above should be a valid
-        feed ID in your subscription list (as returned by the
-        <code>/feeds</code> endpoint above).
-    </div>
-    <strong>Sample Response</strong>
-    <pre class="api-resp">
-{
-    "message": "Successfully unsubscribed from xkcd.com."
 }</pre>
 </div>
 
