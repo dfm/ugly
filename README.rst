@@ -1,11 +1,10 @@
 Ugly Reader
 ===========
 
-*The ugliest Google Reader reaplacement on the market.*
+*The ugliest Google Reader replacement on the market.*
 
-**Take a look at the live demo at: https://reader.dfm.io**
-
-This is the Python source code for this app and it is licensed under the MIT license.
+Take a look at `the live demo <https://reader.dfm.io>`_ or feel free to run your own
+version locally.
 
 Installation & Setup
 --------------------
@@ -46,6 +45,12 @@ saved as ``local.py``):
 The web app itself is built using `Flask <http://flask.pocoo.org/>`_ and it lives
 in ``ugly/__init__.py``. For an example of how to run the app using a configuation
 saved to ``local.py``, take a look at ``run_application.py``.
+
+Finally, you'll need to run a cronjob to update the feeds and deliver any updates
+to your Gmail accounts. This is implemented in the ``uglyd`` executable. You should
+include the command line flag ``--config /path/to/local.py`` indicating the path of
+your local settings file. I've found that running every 15 minutes seems to work
+pretty well. **Log all the things.**
 
 License
 -------
