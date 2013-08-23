@@ -101,7 +101,7 @@ def subscribe():
         # One last try.
         r = requests.get(add_url)
         data = r.text
-        if (r.status_code != requests.code.ok or data.count("<html") > 0 or
+        if (r.status_code != requests.codes.ok or data.count("<html") > 0 or
             (data.count("<rss") + data.count("<rdf") + data.count("<feed")
              == 0)):
             return flask.jsonify(message="The robot can't find a feed at that "
