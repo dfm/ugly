@@ -359,7 +359,14 @@ class Entry(db.Model):
 
         self.ref = entry.get("id") or entry.get("link")
         self.link = entry.get("link")
-        self.body = entry.get("description")
+
+        try:
+            self.body = entry.content[0].value
+
+        except:
+            logging.warn("Content couldn't be parsed.\n{0}".format(self.link))
+            self.body = entry.get("description")
+
         self.title = entry.get("title")
         self.author = entry.get("author")
         self.published = self.parse_date(entry.get("published_parsed"))
