@@ -181,7 +181,9 @@ class User(db.Model):
 
         # Select the mailbox.
         status, data = connection.select(mb)
-        assert status == "OK"
+        if status != "OK":
+            logging.warn(data)
+            return 0
 
         # Deliver the messages.
         email = self.get_email()
