@@ -10,11 +10,13 @@ import flask
 import logging
 import imaplib
 import requests
+import html2text
 import feedparser
 from hashlib import sha1
 from bs4 import BeautifulSoup
 from datetime import datetime
 from SimpleAES import SimpleAES
+from email.utils import formatdate
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from sqlalchemy import (Column, Integer, String, Boolean, DateTime,
@@ -188,30 +190,36 @@ class User(db.Model):
         # Deliver the messages.
         email = self.get_email()
         for entry in entries:
+            # Work out the time stamp.
+            if entry.updated is not None:
+                ts = time.mktime(entry.updated.timetuple())
+            elif entry.published is not None:
+                ts = time.mktime(entry.published.timetuple())
+            else:
+                ts = time.time()
+
             # Create the message.
             msg = MIMEMultipart("alternative")
             msg["From"] = flask.current_app.config["ADMIN_EMAIL"]
             msg["To"] = email
             msg["Subject"] = u"{0} — {1}".format(feed.title, entry.title)
+            msg["Date"] = formatdate(ts)
 
-            # Render the message body.
+            # Render the message body as HTML.
             contents = flask.render_template("message.html", feed=feed,
                                              entry=entry)
-            part = MIMEText(contents.encode("utf-8"), "html", "utf-8")
-            msg.attach(part)
 
-            # Work out the time stamp.
-            if entry.updated is not None:
-                ts = imaplib.Time2Internaldate(
-                    time.mktime(entry.updated.timetuple()))
-            elif entry.published is not None:
-                ts = imaplib.Time2Internaldate(
-                    time.mktime(entry.published.timetuple()))
-            else:
-                ts = imaplib.Time2Internaldate(time.time())
+            # Build the plain text extension.
+            part1 = MIMEText(html2text.html2text(contents).encode("utf-8"),
+                             "plain", "utf-8")
+            msg.attach(part1)
+
+            # Build the HTML extension.
+            part2 = MIMEText(contents.encode("utf-8"), "html", "utf-8")
+            msg.attach(part2)
 
             # Add the message to Gmail.
-            status, [data] = connection.append(mb, "", ts, msg.as_string())
+            status, [data] = connection.append(mb, None, ts, msg.as_string())
             if status == "OK":
                 # Add the base label too.
                 uid = re.findall("\[APPENDUID ([0-9]*) ([0-9]*)\]", data)[0][1]
